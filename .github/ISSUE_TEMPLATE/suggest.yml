@@ -1,0 +1,38 @@
+name: "➕ Предложить или исправить запись"
+description: "Добавить событие/инструмент или сообщить об ошибке — без возни с JSON."
+title: "[Правка]: "
+labels: ["contribution"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Что это?
+      options:
+        - Новое событие Windows (Event ID)
+        - Событие Linux
+        - Инструмент атакующих
+        - Инструмент защитников
+        - Исправление ошибки в существующей записи
+        - Другое
+    validations:
+      required: true
+  - type: input
+    id: subject
+    attributes:
+      label: Что именно
+      description: "Event ID / название инструмента / что исправить"
+      placeholder: "Напр.: 5379  или  Mimikatz  или  «у 4624 неверная ссылка»"
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Подробности
+      description: "Опиши суть: описание, индикаторы атаки, важность, ссылки на источник и т.п."
+    validations:
+      required: true
+  - type: input
+    id: reference
+    attributes:
+      label: Источник (если есть)
+      placeholder: "ссылка на MS Docs / GitHub / статью"

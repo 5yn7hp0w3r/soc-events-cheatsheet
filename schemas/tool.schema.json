@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Инструмент (атака / защита)",
+  "type": "object",
+  "required": ["name", "category"],
+  "additionalProperties": false,
+  "properties": {
+    "id":            { "type": ["string", "number"] },
+    "category":      { "type": "string", "minLength": 1 },
+    "name":          { "type": "string", "minLength": 1 },
+    "type":          { "type": ["string", "null"] },
+    "platform":      { "type": ["string", "null"] },
+    "description":   { "type": ["string", "null"] },
+    "process_names": { "type": ["string", "null"] },
+    "reference":     { "type": ["string", "null"] },
+    "mitre_ttp":     { "type": ["string", "null"] },
+    "event_ids":     { "type": ["string", "null"] },
+    "patterns":      { "type": ["string", "null"] },
+    "d3fend":        { "type": ["string", "null"] },
+    "capabilities":  { "type": ["string", "null"] }
+  }
+}

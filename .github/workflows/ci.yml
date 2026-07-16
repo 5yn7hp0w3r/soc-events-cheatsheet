@@ -1,0 +1,49 @@
+name: CI
+
+# Проверяет данные на каждый PR и push, а после мержа в main — сам
+# пересобирает data.js (чтобы сайт обновился без ручного build.py).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Проверка данных (JSON + схема)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install jsonschema
+      - name: Валидация json/
+        run: python3 schemas/validate.py
+
+  rebuild:
+    name: Пересборка data.js и деплой
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Собрать data.js из json/
+        run: python3 build.py
+      - name: Закоммитить data.js, если изменился
+        run: |
+          if ! git diff --quiet -- data.js; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data.js
+            git commit -m "chore: авто-пересборка data.js [skip ci]"
+            git push
+          else
+            echo "data.js без изменений — пропускаем"
+          fi

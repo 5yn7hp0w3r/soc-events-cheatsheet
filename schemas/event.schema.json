@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Событие Windows (WinEvents_ALL)",
+  "type": "object",
+  "required": ["Event ID", "Название события"],
+  "additionalProperties": false,
+  "properties": {
+    "Категория":                                  { "type": ["string", "null"] },
+    "Event ID":                                   { "type": ["string", "number"], "minLength": 1 },
+    "Название события":                           { "type": "string", "minLength": 1 },
+    "Лог":                                        { "type": ["string", "null"] },
+    "Важность":                                   { "enum": ["Критическая", "Высокая", "Средняя", "Низкая", "Информационное", null] },
+    "Частота":                                    { "enum": ["Очень высокая", "Высокая", "Средняя", "Низкая", "Очень низкая", null] },
+    "Описание":                                   { "type": ["string", "null"] },
+    "Подробности":                                { "type": ["string", "null"] },
+    "Индикаторы атаки":                           { "type": ["string", "null"] },
+    "False Positive (легитимные срабатывания)":   { "type": ["string", "null"] },
+    "MITRE TTP":                                  { "type": ["string", "null"] },
+    "Типичные сценарии":                          { "type": ["string", "null"] },
+    "Документация для данного EventCode":         { "type": ["string", "null"] },
+    "Ключевые поля":                              { "type": ["string", "null"] },
+    "Причины блокировки":                         { "type": ["string", "null"] },
+    "Ключевые привилегии":                        { "type": ["string", "null"] },
+    "SPL-шаблон":                                 { "type": ["string", "null"] },
+    "Корреляции":                                 { "type": ["string", "null"] }
+  }
+}
