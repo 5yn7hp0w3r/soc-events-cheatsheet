@@ -10,7 +10,7 @@
 ![Language](https://img.shields.io/badge/язык-Русский-blue)
 ![Events](https://img.shields.io/badge/Event_ID-144-critical)
 ![Sheets](https://img.shields.io/badge/разделов-22-informational)
-![Storylines](https://img.shields.io/badge/цепочек_атак-15-orange)
+![Storylines](https://img.shields.io/badge/цепочек_атак-24-orange)
 ![Tools](https://img.shields.io/badge/инструментов-264-green)
 ![Platform](https://img.shields.io/badge/Windows-Linux-lightgrey)
 ![MITRE](https://img.shields.io/badge/MITRE-ATT%26CK-red)
@@ -37,7 +37,7 @@
 
 - **144 события Windows** — полный реестр Event ID с важностью, частотой, IoC и false-positive
 - **События, сгруппированные по функциям** — входы, управление учётками, процессы, аудит доступа, discovery/PowerShell, сеть, RDP, Sysmon, Active Directory, Defender
-- **15 storyline-цепочек** — типовые сценарии атак, разложенные по шагам и размеченные по MITRE ATT&CK (в детализации — 90+ шагов с SPL-логикой)
+- **24 storyline-цепочки** — типовые сценарии атак (brute-force, Kerberoasting, DCSync, Golden/Silver Ticket, фишинг→C2, дамп LSASS, web-shell, Shadow Credentials, PetitPotam/ESC8, ransomware…), каждая разложена по шагам с Event ID и размечена по MITRE ATT&CK
 - **43 события Linux** — auditd / journald / syslog с командами проверки через CLI
 - **45 форензик-артефактов Windows** — где искать следы, чем анализировать, пример применения
 - **264 инструмента** — 74 атакующих (с process names и Event ID) + 190 защитников (EDR/XDR, SIEM, NDR, DFIR, WAF, VM, AppSec, anti-DDoS, IdM + отечественные вендоры: Positive Technologies, SolidLab, Kaspersky, BI.ZONE, Солар, F6, InfoWatch, UserGate…)
@@ -75,7 +75,7 @@
 
 | # | Раздел | Записей | Описание |
 |:--:|:--|:--:|:--|
-| 17 | [🧩 Storylines](MD/17_Storylines.md) | 15 | Цепочки атак по MITRE ATT&CK / Kill Chain: brute-force, Kerberoasting, DCSync, lateral movement, ransomware… Сводка + пошаговая детализация с Event ID и IoC |
+| 17 | [🧩 Storylines](MD/17_Storylines.md) | 24 | Цепочки атак по MITRE ATT&CK / Kill Chain: brute-force, Kerberoasting, DCSync, Golden/Silver Ticket, фишинг→C2, дамп LSASS, web-shell, Shadow Credentials, PetitPotam/ESC8… Сводка + пошаговая детализация с Event ID и IoC |
 | 18 | [🔬 Forensics WIN](MD/18_Forensics_WIN.md) | 45 | Артефакты: реестр (Run, ShimCache, AmCache), prefetch, `$MFT`, journal, LNK/Jump Lists. Расположение + инструмент + пример |
 | 21 | [⚔️ Инструменты атакующих](MD/21_Инструменты%20атакующих.md) | 74 | Evilginx, Cobalt Strike, Mimikatz, AdFind, RMM-abuse, AADInternals, web-shells… Процессы, MITRE TTP, Event ID, паттерны |
 | 20 | [🛡️ Инструменты защитников](MD/20_Инструменты%20защитников.md) | 190 | EDR/XDR, SIEM, NDR, forensics, TI, anti-DDoS, IdM + отечественные (Positive, Kaspersky, BI.ZONE, Солар, F6, UserGate, InfoWatch…) |

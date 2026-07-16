@@ -133,6 +133,11 @@
   .slstep-eid{font-family:var(--mono);font-size:12px;flex-shrink:0;padding-top:1px}
   .slstep-body{font-size:13px;color:var(--fg);flex:1;line-height:1.45}
   .slstep-f{font-family:var(--mono);font-size:11px;color:var(--fg3);margin-top:4px}
+  .scenarios{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:16px 0 2px}
+  .sc-label{font-size:12.5px;color:var(--fg2);font-weight:600;white-space:nowrap}
+  .sc-row{display:flex;gap:8px;flex-wrap:wrap}
+  .sc-chip{cursor:pointer;font-size:12.5px;padding:6px 12px;border-radius:16px;background:var(--sl-bg);border:1px solid rgba(255,122,198,.4);color:#ffc4e6;transition:.13s;white-space:nowrap;font-family:inherit;line-height:1.2}
+  .sc-chip:hover{background:rgba(255,122,198,.28);border-color:var(--sl);color:#fff;transform:translateY(-1px)}
   .chip.active[data-val="Attack"]{background:linear-gradient(145deg,#e0403a,#b52e29);border-color:#e0403a;box-shadow:0 3px 14px rgba(255,93,87,.35)}
   .chip.active[data-val="Defense"]{background:linear-gradient(145deg,#2f81f7,#2564d6);border-color:#2f81f7;box-shadow:0 3px 14px rgba(47,129,247,.35)}
   .ctitle{font-size:15.5px;font-weight:650;color:var(--fg);line-height:1.35}
@@ -221,6 +226,7 @@
 </div>
 
 <div class="wrap">
+  <div class="scenarios" id="scenarios"></div>
   <div class="meta" id="meta"></div>
   <main><div class="grid" id="grid"></div></main>
 </div>
@@ -675,6 +681,14 @@
   var backtop=document.getElementById('backtop');
   backtop.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
   window.addEventListener('scroll',function(){ backtop.classList.toggle('show',window.scrollY>600); });
+
+  // сценарии расследования (быстрые старты на базе цепочек атак)
+  (function(){
+    var el=document.getElementById('scenarios'); if(!el||!storylines.length) return;
+    var chips=storylines.map(function(sl){return '<button class="sc-chip" data-num="'+esc(sl.num)+'">'+esc(sl.name)+'</button>';}).join('');
+    el.innerHTML='<span class="sc-label">🎬 Сценарии расследования:</span><div class="sc-row">'+chips+'</div>';
+    el.addEventListener('click',function(e){ var b=e.target.closest('.sc-chip'); if(b) goSearch('storyline '+b.getAttribute('data-num'), true, 'Storyline'); });
+  })();
 
   // PWA: офлайн-режим через service worker
   if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
