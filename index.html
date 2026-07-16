@@ -203,6 +203,7 @@
       <div class="frow"><span class="flabel">Важность</span><div id="sevChips"></div>
         <label class="expcb"><input type="checkbox" id="idOnly"> 🎯 по Event ID</label>
         <label class="expcb"><input type="checkbox" id="expAll"> развернуть все</label>
+        <span class="reset" id="copylink">🔗 ссылка</span>
         <span class="reset" id="reset">✕ сбросить фильтры</span>
       </div>
     </div>
@@ -451,6 +452,14 @@
   expAll.onchange=function(){ state.expand=expAll.checked; render(); };
   var idOnly=document.getElementById('idOnly');
   idOnly.onchange=function(){ state.idOnly=idOnly.checked; render(); };
+  var copylink=document.getElementById('copylink');
+  copylink.onclick=function(){
+    var url=location.href;
+    if(navigator.clipboard) navigator.clipboard.writeText(url).catch(function(){});
+    else { var ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_){}document.body.removeChild(ta); }
+    var o=copylink.textContent; copylink.textContent='✓ скопировано'; copylink.style.color='var(--low)';
+    setTimeout(function(){copylink.textContent=o;copylink.style.color='';},1400);
+  };
 
   // ---- рендер ----
   function esc(s){return s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -549,6 +558,39 @@
     meta.innerHTML='Найдено: <b>'+shown+'</b> из '+records.length+(active.length?' &nbsp;·&nbsp; фильтры: '+active.map(esc).join(', '):'');
     grid.innerHTML=shown?out.join(''):
       '<div class="empty"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg><div><b>Ничего не найдено.</b><br>Сбрось фильтры или измени запрос.</div></div>';
+    stateToHash();
+  }
+
+  // ---- deep-links: состояние фильтров в URL ----
+  function stateToHash(){
+    var p=[];
+    if(state.q) p.push('q='+encodeURIComponent(state.q));
+    if(state.src) p.push('src='+encodeURIComponent(state.src));
+    if(state.sev.length) p.push('sev='+state.sev.join(','));
+    if(state.cat) p.push('cat='+encodeURIComponent(state.cat));
+    if(state.mitre) p.push('mitre='+encodeURIComponent(state.mitre));
+    if(state.idOnly) p.push('idonly=1');
+    if(state.expand) p.push('expand=1');
+    var h=p.join('&');
+    try{ history.replaceState(null,'', h?('#'+h):(location.pathname+location.search)); }catch(e){}
+  }
+  function hashToState(){
+    var h=location.hash.replace(/^#/,''); if(!h) return false;
+    var p={}; h.split('&').forEach(function(kv){ var i=kv.indexOf('='); var k=i<0?kv:kv.slice(0,i);
+      p[k]=i<0?'':decodeURIComponent(kv.slice(i+1)); });
+    if(p.q!==undefined) state.q=p.q;
+    if(p.src!==undefined) state.src=p.src;
+    if(p.sev) state.sev=p.sev.split(',').filter(Boolean);
+    if(p.cat!==undefined) state.cat=p.cat;
+    if(p.mitre!==undefined) state.mitre=p.mitre;
+    state.idOnly = p.idonly==='1';
+    state.expand = p.expand==='1';
+    return true;
+  }
+  function syncUIfromState(){
+    qinput.value=state.q; idOnly.checked=state.idOnly; expAll.checked=state.expand;
+    [].forEach.call(srcEl.children,function(x){x.classList.toggle('active',x.dataset.val===state.src);});
+    syncSevChips(); buildCats(); catSel.value=state.cat||''; msel.value=state.mitre||'';
   }
 
   // централизованная навигация (клик по Event ID / цепочке)
@@ -589,6 +631,10 @@
   backtop.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
   window.addEventListener('scroll',function(){ backtop.classList.toggle('show',window.scrollY>600); });
 
+  // старт: восстановить состояние из URL (для расшаренных ссылок)
+  if(hashToState()) syncUIfromState();
+  // навигация назад/вперёд браузера
+  window.addEventListener('hashchange',function(){ if(hashToState()){ syncUIfromState(); render(); } });
   render();
 })();
 </script>
