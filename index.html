@@ -133,13 +133,8 @@
   .slstep-eid{font-family:var(--mono);font-size:12px;flex-shrink:0;padding-top:1px}
   .slstep-body{font-size:13px;color:var(--fg);flex:1;line-height:1.45}
   .slstep-f{font-family:var(--mono);font-size:11px;color:var(--fg3);margin-top:4px}
-  .scenarios{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:16px 0 2px}
-  .sc-label{font-size:12.5px;color:var(--fg2);font-weight:600;white-space:nowrap}
-  .sc-row{display:flex;gap:8px;flex-wrap:wrap}
-  .sc-chip{cursor:pointer;font-size:12.5px;padding:6px 12px;border-radius:16px;background:var(--sl-bg);border:1px solid rgba(255,122,198,.4);color:#ffc4e6;transition:.13s;white-space:nowrap;font-family:inherit;line-height:1.2}
-  .sc-chip:hover{background:rgba(255,122,198,.28);border-color:var(--sl);color:#fff;transform:translateY(-1px)}
   .spoiler{margin-top:13px;border:1px solid var(--border);border-radius:9px;background:rgba(255,122,198,.06);overflow:hidden}
-  .spoiler>summary{cursor:pointer;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--sl);font-weight:700;list-style:none;user-select:none}
+  .spoiler>summary{cursor:pointer;padding:9px 12px;font-size:13px;color:var(--sl);font-weight:600;list-style:none;user-select:none}
   .spoiler>summary::-webkit-details-marker{display:none}
   .spoiler>summary::before{content:"▸ "}
   .spoiler[open]>summary::before{content:"▾ "}
@@ -232,7 +227,6 @@
 </div>
 
 <div class="wrap">
-  <div class="scenarios" id="scenarios"></div>
   <div class="meta" id="meta"></div>
   <main><div class="grid" id="grid"></div></main>
 </div>
@@ -535,7 +529,7 @@
     return '<div class="field"><h4>🧩 Участвует в цепочках атак</h4><div class="tags">'+chips+'</div></div>'; }
   function slChainField(r){
     if(r.src!=='Storyline') return '';
-    var h=(r.about?'<details class="spoiler"><summary>💡 Что это за атака</summary><div class="sp-body">'+hl(r.about)+'</div></details>':'');
+    var h=(r.about?'<details class="spoiler"><summary>💡 Что за атака?</summary><div class="sp-body">'+hl(r.about)+'</div></details>':'');
     h+='<div class="field"><h4>🧩 Цепочка атаки</h4><div class="val corrlinks">'+linkifyEids(r.chain||'')+'</div>'+
       (r.chainEids&&r.chainEids.length?'<button class="slbtn" data-eids="'+esc(r.chainEids.join(','))+'">🔎 показать все события цепочки</button>':'')+'</div>';
     if(r.steps&&r.steps.length){
@@ -614,7 +608,6 @@
     var active=[]; if(state.src)active.push(srcLbl[state.src]||state.src); if(state.cat)active.push(state.cat);
     if(state.sev.length)active.push('важность: '+state.sev.map(function(s){return sevRu[s]||s;}).join('/'));  if(state.mitre)active.push(state.mitre); if(state.q)active.push('«'+state.q+'»');
     meta.innerHTML='Найдено: <b>'+shown+'</b> из '+records.length+(active.length?' &nbsp;·&nbsp; фильтры: '+active.map(esc).join(', '):'');
-    var scEl=document.getElementById('scenarios'); if(scEl) scEl.style.display = state.src ? 'none' : '';
     grid.innerHTML=shown?out.join(''):
       '<div class="empty"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg><div><b>Ничего не найдено.</b><br>Сбрось фильтры или измени запрос.</div></div>';
     stateToHash();
@@ -689,14 +682,6 @@
   var backtop=document.getElementById('backtop');
   backtop.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
   window.addEventListener('scroll',function(){ backtop.classList.toggle('show',window.scrollY>600); });
-
-  // сценарии расследования (быстрые старты на базе цепочек атак)
-  (function(){
-    var el=document.getElementById('scenarios'); if(!el||!storylines.length) return;
-    var chips=storylines.map(function(sl){return '<button class="sc-chip" data-num="'+esc(sl.num)+'">'+esc(sl.name)+'</button>';}).join('');
-    el.innerHTML='<span class="sc-label">🎬 Сценарии расследования:</span><div class="sc-row">'+chips+'</div>';
-    el.addEventListener('click',function(e){ var b=e.target.closest('.sc-chip'); if(b) goSearch('storyline '+b.getAttribute('data-num'), true, 'Storyline'); });
-  })();
 
   // PWA: офлайн-режим через service worker
   if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
