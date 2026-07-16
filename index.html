@@ -127,6 +127,12 @@
   .slchip:hover{background:rgba(255,122,198,.25);border-color:var(--sl)}
   .slbtn{margin-top:9px;cursor:pointer;font-size:12px;color:var(--sl);background:var(--panel2);border:1px solid rgba(255,122,198,.4);border-radius:8px;padding:6px 11px;transition:.12s}
   .slbtn:hover{border-color:var(--sl);color:#fff;background:rgba(255,122,198,.18)}
+  .slsteps{display:flex;flex-direction:column;gap:8px}
+  .slstep{display:flex;gap:9px;align-items:flex-start;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:9px;padding:8px 10px}
+  .slstep-n{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--sl);background:var(--sl-bg);border:1px solid rgba(255,122,198,.4);border-radius:6px;padding:2px 7px;flex-shrink:0;min-width:34px;text-align:center}
+  .slstep-eid{font-family:var(--mono);font-size:12px;flex-shrink:0;padding-top:1px}
+  .slstep-body{font-size:13px;color:var(--fg);flex:1;line-height:1.45}
+  .slstep-f{font-family:var(--mono);font-size:11px;color:var(--fg3);margin-top:4px}
   .chip.active[data-val="Attack"]{background:linear-gradient(145deg,#e0403a,#b52e29);border-color:#e0403a;box-shadow:0 3px 14px rgba(255,93,87,.35)}
   .chip.active[data-val="Defense"]{background:linear-gradient(145deg,#2f81f7,#2564d6);border-color:#2f81f7;box-shadow:0 3px 14px rgba(47,129,247,.35)}
   .ctitle{font-size:15.5px;font-weight:650;color:var(--fg);line-height:1.35}
@@ -255,18 +261,33 @@
   var popularEids = {};
   (D['Popular events']||[]).forEach(function(r){ var e=v(r['Event ID']); if(e) popularEids[e]=1; });
 
-  // Storylines (цепочки атак) — сводные строки + карта Event ID -> цепочки
+  // Storylines (цепочки атак) — сводные строки + пошаговая детализация + карта Event ID -> цепочки
   var storylines = [], eid2sl = {};
   (function(){
     var SL = D['Storylines']||[]; if(!SL.length) return;
     var sk = Object.keys(SL[0])[0];
+    var byNum = {};
+    // 1) сводные строки (1..15)
     SL.forEach(function(r){
       var num = String(r[sk]||'').trim(); if(!/^\d+$/.test(num)) return;
       var chain = v(r['col_3']);
       var eids = chain.match(/\b\d{3,5}\b/g) || [];
-      var sl = {num:num, name:v(r['col_2']), cat:v(r['col_1']), chain:chain, mitre:v(r['col_4']), eids:eids};
-      storylines.push(sl);
+      var sl = {num:num, name:v(r['col_2']), cat:v(r['col_1']), chain:chain, mitre:v(r['col_4']), eids:eids, steps:[], summary:''};
+      storylines.push(sl); byNum[num]=sl;
       eids.forEach(function(e){ (eid2sl[e]=eid2sl[e]||[]); if(eid2sl[e].indexOf(sl)===-1) eid2sl[e].push(sl); });
+    });
+    // 2) детализация по шагам (заголовки «Storyline N: …», шаги «N.x», строка «Итог»)
+    var cur = null;
+    SL.forEach(function(r){
+      var first = String(r[sk]||'').trim();
+      var mh = first.match(/^Storyline\s+(\d+)/i);
+      if(mh){ cur = byNum[mh[1]]||null; return; }
+      if(!cur) return;
+      if(/^\d+\.\d+/.test(first)){
+        cur.steps.push({step:first, phase:v(r['col_1']), eid:v(r['col_2']), desc:v(r['col_3']), fields:v(r['col_4'])});
+      } else if(/^итог/i.test(first)){
+        cur.summary = v(r['col_3']) + (v(r['col_4'])?' ('+v(r['col_4'])+')':''); cur = null;
+      }
     });
   })();
   function winFallback(cat){
@@ -356,14 +377,16 @@
   });
   // Storylines (цепочки атак)
   storylines.forEach(function(sl){
+    var stepstext=sl.steps.map(function(s){return s.phase+' '+s.desc;}).join(' ');
     records.push({src:'Storyline',id:'Storyline '+sl.num,title:sl.name,cat:sl.cat,groups:[sl.cat||'Storyline'],
-      sev:'',desc:'Цепочка: '+sl.chain,mitre:sl.mitre,chain:sl.chain,chainEids:sl.eids});
+      sev:'',desc:'Цепочка: '+sl.chain,mitre:sl.mitre,chain:sl.chain,chainEids:sl.eids,
+      steps:sl.steps,summary:sl.summary,stepstext:stepstext});
   });
 
   // ---- индексы ----
   var mitreRe=/T\d{4}(?:\.\d{3})?|TA\d{4}/g, mitreSet={};
   records.forEach(function(r){
-    r._blob=[r.id,r.title,r.cat,r.log,r.desc,r.details,r.ioc,r.fp,r.mitre,r.scen,r.fields,r.spl,r.corr,r.cli,r.proc,r.eventids,r.patterns,r.d3fend,r.capabilities,r.dec,r.typical,r.soc,r.reco,r.ltsource,r.example,(r.groups||[]).join(' ')].join(' ').toLowerCase();
+    r._blob=[r.id,r.title,r.cat,r.log,r.desc,r.details,r.ioc,r.fp,r.mitre,r.scen,r.fields,r.spl,r.corr,r.cli,r.proc,r.eventids,r.patterns,r.d3fend,r.capabilities,r.dec,r.typical,r.soc,r.reco,r.ltsource,r.example,r.stepstext,r.summary,(r.groups||[]).join(' ')].join(' ').toLowerCase();
     r._idtok=(r.id||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
     r._mitre=[]; var m; while((m=mitreRe.exec(r.mitre||''))!==null){ r._mitre.push(m[0]); mitreSet[m[0]]=(mitreSet[m[0]]||0)+1; } mitreRe.lastIndex=0;
   });
@@ -488,6 +511,9 @@
     return '<div class="field"><h4>MITRE ATT&CK</h4><div class="tags">'+tags+'</div></div>'; }
   // Event ID внутри текста -> кликабельные (для корреляций и цепочек)
   function linkifyEids(s){ return esc(s).replace(/\b(\d{3,5})\b/g,function(m){return '<span class="eidlink" data-eid="'+m+'">'+m+'</span>';}); }
+  // CLI-блок -> копируемый bash: ▸ заголовок => # комментарий, приглашение $ убираем
+  function bashify(s){ if(!s) return s;
+    return s.split('\n').map(function(l){ return l.replace(/^\s*▸\s?/,'# ').replace(/^\s*\$\s?/,''); }).join('\n'); }
   function corrField(val){ if(!val)return''; return '<div class="field"><h4>Корреляции <span style="color:var(--fg3);text-transform:none;letter-spacing:0">(клик по ID → переход)</span></h4><div class="val corrlinks">'+linkifyEids(val)+'</div></div>'; }
   function slForEvent(r){
     if(r.src!=='Windows'&&r.src!=='Sysmon') return '';
@@ -496,8 +522,21 @@
     return '<div class="field"><h4>🧩 Участвует в цепочках атак</h4><div class="tags">'+chips+'</div></div>'; }
   function slChainField(r){
     if(r.src!=='Storyline') return '';
-    return '<div class="field"><h4>🧩 Цепочка атаки</h4><div class="val corrlinks">'+linkifyEids(r.chain||'')+'</div>'+
-      (r.chainEids&&r.chainEids.length?'<button class="slbtn" data-eids="'+esc(r.chainEids.join(','))+'">🔎 показать все события цепочки</button>':'')+'</div>'; }
+    var h='<div class="field"><h4>🧩 Цепочка атаки</h4><div class="val corrlinks">'+linkifyEids(r.chain||'')+'</div>'+
+      (r.chainEids&&r.chainEids.length?'<button class="slbtn" data-eids="'+esc(r.chainEids.join(','))+'">🔎 показать все события цепочки</button>':'')+'</div>';
+    if(r.steps&&r.steps.length){
+      var steps=r.steps.map(function(s){
+        return '<div class="slstep">'+
+          '<span class="slstep-n">'+esc(s.step)+'</span>'+
+          (s.eid?'<span class="slstep-eid corrlinks">'+linkifyEids(s.eid)+'</span>':'')+
+          '<div class="slstep-body"><b>'+esc(s.phase)+'</b>'+(s.desc?' — '+esc(s.desc):'')+
+          (s.fields?'<div class="slstep-f">🔑 '+esc(s.fields)+'</div>':'')+'</div>'+
+        '</div>';
+      }).join('');
+      h+='<div class="field"><h4>📋 Как разворачивается атака — по шагам</h4><div class="slsteps">'+steps+'</div></div>';
+    }
+    if(r.summary) h+=fld('ioc','🎯 Итоговая корреляция (когда бить тревогу)',r.summary);
+    return h; }
 
   function card(r,i){
     var sev=sevKey(r.sev);
@@ -531,7 +570,7 @@
       fld('','Типичный источник событий',r.ltsource)+
       fld('','Пример',r.example)+
       code('SPL-шаблон',r.spl)+
-      code('Проверка (CLI / journalctl)',r.cli)+
+      code('Проверка (CLI / journalctl)',bashify(r.cli))+
       corrField(r.corr)+
       slForEvent(r)+
       (r.doc?'<div class="field"><h4>Документация</h4><a class="doc-link" href="'+esc(fixUrl(r.doc))+'" target="_blank" rel="noopener">'+esc(r.doc)+' ↗</a></div>':'')+
