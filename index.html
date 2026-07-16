@@ -138,6 +138,12 @@
   .sc-row{display:flex;gap:8px;flex-wrap:wrap}
   .sc-chip{cursor:pointer;font-size:12.5px;padding:6px 12px;border-radius:16px;background:var(--sl-bg);border:1px solid rgba(255,122,198,.4);color:#ffc4e6;transition:.13s;white-space:nowrap;font-family:inherit;line-height:1.2}
   .sc-chip:hover{background:rgba(255,122,198,.28);border-color:var(--sl);color:#fff;transform:translateY(-1px)}
+  .spoiler{margin-top:13px;border:1px solid var(--border);border-radius:9px;background:rgba(255,122,198,.06);overflow:hidden}
+  .spoiler>summary{cursor:pointer;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--sl);font-weight:700;list-style:none;user-select:none}
+  .spoiler>summary::-webkit-details-marker{display:none}
+  .spoiler>summary::before{content:"▸ "}
+  .spoiler[open]>summary::before{content:"▾ "}
+  .spoiler>.sp-body{padding:2px 12px 11px;font-size:13.5px;color:var(--fg);line-height:1.5}
   .chip.active[data-val="Attack"]{background:linear-gradient(145deg,#e0403a,#b52e29);border-color:#e0403a;box-shadow:0 3px 14px rgba(255,93,87,.35)}
   .chip.active[data-val="Defense"]{background:linear-gradient(145deg,#2f81f7,#2564d6);border-color:#2f81f7;box-shadow:0 3px 14px rgba(47,129,247,.35)}
   .ctitle{font-size:15.5px;font-weight:650;color:var(--fg);line-height:1.35}
@@ -278,7 +284,7 @@
       var num = String(r[sk]||'').trim(); if(!/^\d+$/.test(num)) return;
       var chain = v(r['col_3']);
       var eids = chain.match(/\b\d{3,5}\b/g) || [];
-      var sl = {num:num, name:v(r['col_2']), cat:v(r['col_1']), chain:chain, mitre:v(r['col_4']), eids:eids, steps:[], summary:''};
+      var sl = {num:num, name:v(r['col_2']), cat:v(r['col_1']), chain:chain, mitre:v(r['col_4']), about:v(r['col_5']), eids:eids, steps:[], summary:''};
       storylines.push(sl); byNum[num]=sl;
       eids.forEach(function(e){ (eid2sl[e]=eid2sl[e]||[]); if(eid2sl[e].indexOf(sl)===-1) eid2sl[e].push(sl); });
     });
@@ -385,14 +391,14 @@
   storylines.forEach(function(sl){
     var stepstext=sl.steps.map(function(s){return s.phase+' '+s.desc;}).join(' ');
     records.push({src:'Storyline',id:'Storyline '+sl.num,title:sl.name,cat:sl.cat,groups:[sl.cat||'Storyline'],
-      sev:'',desc:'Цепочка: '+sl.chain,mitre:sl.mitre,chain:sl.chain,chainEids:sl.eids,
+      sev:'',desc:sl.about||('Цепочка: '+sl.chain),about:sl.about,mitre:sl.mitre,chain:sl.chain,chainEids:sl.eids,
       steps:sl.steps,summary:sl.summary,stepstext:stepstext});
   });
 
   // ---- индексы ----
   var mitreRe=/T\d{4}(?:\.\d{3})?|TA\d{4}/g, mitreSet={};
   records.forEach(function(r){
-    r._blob=[r.id,r.title,r.cat,r.log,r.desc,r.details,r.ioc,r.fp,r.mitre,r.scen,r.fields,r.spl,r.corr,r.cli,r.proc,r.eventids,r.patterns,r.d3fend,r.capabilities,r.dec,r.typical,r.soc,r.reco,r.ltsource,r.example,r.stepstext,r.summary,(r.groups||[]).join(' ')].join(' ').toLowerCase();
+    r._blob=[r.id,r.title,r.cat,r.log,r.desc,r.details,r.ioc,r.fp,r.mitre,r.scen,r.fields,r.spl,r.corr,r.cli,r.proc,r.eventids,r.patterns,r.d3fend,r.capabilities,r.dec,r.typical,r.soc,r.reco,r.ltsource,r.example,r.stepstext,r.summary,r.chain,(r.groups||[]).join(' ')].join(' ').toLowerCase();
     r._idtok=(r.id||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
     r._mitre=[]; var m; while((m=mitreRe.exec(r.mitre||''))!==null){ r._mitre.push(m[0]); mitreSet[m[0]]=(mitreSet[m[0]]||0)+1; } mitreRe.lastIndex=0;
   });
@@ -529,7 +535,8 @@
     return '<div class="field"><h4>🧩 Участвует в цепочках атак</h4><div class="tags">'+chips+'</div></div>'; }
   function slChainField(r){
     if(r.src!=='Storyline') return '';
-    var h='<div class="field"><h4>🧩 Цепочка атаки</h4><div class="val corrlinks">'+linkifyEids(r.chain||'')+'</div>'+
+    var h=(r.about?'<details class="spoiler"><summary>💡 Что это за атака</summary><div class="sp-body">'+hl(r.about)+'</div></details>':'');
+    h+='<div class="field"><h4>🧩 Цепочка атаки</h4><div class="val corrlinks">'+linkifyEids(r.chain||'')+'</div>'+
       (r.chainEids&&r.chainEids.length?'<button class="slbtn" data-eids="'+esc(r.chainEids.join(','))+'">🔎 показать все события цепочки</button>':'')+'</div>';
     if(r.steps&&r.steps.length){
       var steps=r.steps.map(function(s){
@@ -607,6 +614,7 @@
     var active=[]; if(state.src)active.push(srcLbl[state.src]||state.src); if(state.cat)active.push(state.cat);
     if(state.sev.length)active.push('важность: '+state.sev.map(function(s){return sevRu[s]||s;}).join('/'));  if(state.mitre)active.push(state.mitre); if(state.q)active.push('«'+state.q+'»');
     meta.innerHTML='Найдено: <b>'+shown+'</b> из '+records.length+(active.length?' &nbsp;·&nbsp; фильтры: '+active.map(esc).join(', '):'');
+    var scEl=document.getElementById('scenarios'); if(scEl) scEl.style.display = state.src ? 'none' : '';
     grid.innerHTML=shown?out.join(''):
       '<div class="empty"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg><div><b>Ничего не найдено.</b><br>Сбрось фильтры или измени запрос.</div></div>';
     stateToHash();
