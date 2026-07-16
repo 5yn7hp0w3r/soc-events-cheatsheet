@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOL Links — Living-off-the-Land справочники для SOC</title>
+<meta name="description" content="Полная подборка проектов Living-off-the-Land: LOLBAS, GTFOBins, LOLDrivers, LOLRMM, LOLESXi, LOLC2, LOLCreds и др. — индекс для SOC-аналитиков и threat hunters.">
+<style>
+  :root{
+    --bg:#0a0d13; --bg-soft:#0f141c; --panel:#141a24; --panel2:#1a2130; --border:#242c3a; --border2:#303a4d;
+    --fg:#e8eef6; --fg2:#9aa7b8; --fg3:#5f6b7d; --accent:#4db8ff; --accent2:#2f81f7; --accent-glow:rgba(77,184,255,.25);
+    --win:#4db8ff; --nix:#42c76a; --mac:#c08bff; --drv:#ff9f45; --rmm:#ff5d57; --esxi:#e8c14a; --net:#7fc7ff;
+    --ad:#ff8fb0; --gold:#ffd166;
+    --mono:'SFMono-Regular',ui-monospace,Consolas,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+
+  .nav{border-bottom:1px solid var(--border);background:rgba(10,13,19,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}
+  .nav .wrap{display:flex;align-items:center;gap:14px;height:54px}
+  .nav a{color:var(--fg2);font-size:14px;padding:6px 11px;border-radius:8px}
+  .nav a:hover{color:var(--fg);background:var(--panel);text-decoration:none}
+  .nav a.here{color:var(--fg);background:var(--panel);border:1px solid var(--border)}
+  .nav .sp{flex:1}
+
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border);
+    background:radial-gradient(1100px 380px at 20% -10%,rgba(255,93,87,.14),transparent 60%),
+               radial-gradient(900px 360px at 88% -20%,rgba(47,129,247,.16),transparent 55%),
+               linear-gradient(180deg,#0d1219,#0a0d13)}
+  .hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+    background-size:44px 44px;mask-image:radial-gradient(700px 300px at 30% 0%,#000,transparent 75%)}
+  .hero-in{position:relative;z-index:1;padding:34px 0 26px}
+  h1{margin:0;font-size:29px;letter-spacing:-.5px;font-weight:800}
+  h1 .em{margin-right:8px}
+  .tagline{margin:12px 0 0;color:var(--fg2);font-size:15px;max-width:780px}
+  .tagline b{color:var(--fg)}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:rgba(20,26,36,.7);border:1px solid var(--border);
+    border-radius:22px;padding:6px 13px;font-size:12.5px;color:var(--fg2)}
+  .pill b{color:var(--fg)}
+
+  .tools{position:sticky;top:54px;z-index:9;background:rgba(10,13,19,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:12px 0}
+  .search{position:relative;max-width:560px}
+  .search input{width:100%;padding:11px 14px 11px 40px;font-size:14.5px;background:var(--panel);border:1px solid var(--border2);border-radius:10px;color:var(--fg)}
+  .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+  .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:17px;height:17px;fill:var(--fg3)}
+
+  main{padding:20px 0 70px}
+  .sec{margin-top:26px}
+  .sec h2{font-size:14px;text-transform:uppercase;letter-spacing:.7px;color:var(--fg2);margin:0 0 13px;display:flex;align-items:center;gap:10px}
+  .sec h2 .bar{width:24px;height:3px;border-radius:2px;background:var(--c,var(--accent))}
+  .sec h2 .n{color:var(--fg3);font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:13px}
+  .card{position:relative;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--panel),#121826);
+    border:1px solid var(--border);border-radius:14px;padding:15px;transition:.15s;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c,var(--accent2))}
+  .card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.35)}
+  .ct{display:flex;align-items:center;gap:10px}
+  .badge{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:12px;color:#0a0d13;flex-shrink:0}
+  .name{font-size:15.5px;font-weight:700}
+  .plat{margin-left:auto;font-size:10px;color:var(--fg2);border:1px solid var(--border);border-radius:10px;padding:2px 8px;white-space:nowrap}
+  .desc{margin:10px 0 0;font-size:13px;color:var(--fg2);flex:1}
+  .tagline2{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .tg{font-size:10.5px;color:var(--fg3);background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:1px 7px}
+  .go{margin-top:11px;font-size:12.5px;font-family:var(--mono);color:var(--accent);word-break:break-all}
+  .go.gh{margin-top:6px;font-size:11.5px;color:var(--fg2)}
+  .go.gh:hover{color:var(--fg)}
+  .empty{text-align:center;padding:50px 20px;color:var(--fg3)}
+  footer{border-top:1px solid var(--border);text-align:center;padding:26px 20px;color:var(--fg3);font-size:12.5px}
+  mark{background:rgba(232,193,74,.32);color:inherit;border-radius:3px;padding:0 1px}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}h1{font-size:23px}}
+</style>
+</head>
+<body>
+
+<nav class="nav"><div class="wrap">
+  <a href="index.html">🔎 Поиск событий</a>
+  <a href="lol-links.html" class="here">🌐 LOL Links</a>
+  <span class="sp"></span>
+  <a href="https://github.com/5yn7hp0w3r/soc-events-cheatsheet" target="_blank" rel="noopener">GitHub ↗</a>
+</div></nav>
+
+<header class="hero"><div class="wrap hero-in">
+  <h1><span class="em">🌐</span>LOL Links</h1>
+  <p class="tagline">Полная подборка проектов семейства <b>Living-off-the-Land</b> — справочники о том, как атакующие
+     злоупотребляют <b>легитимными</b> бинарями, драйверами, приложениями, сервисами и учётными данными.
+     Настольные закладки SOC-аналитика и threat hunter'а.</p>
+  <div class="pills" id="pills"></div>
+</div></header>
+
+<div class="tools"><div class="wrap">
+  <div class="search">
+    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg>
+    <input id="q" type="search" placeholder="Фильтр: название, описание, тег (windows, C2, RMM, exfiltration…)" autocomplete="off">
+  </div>
+</div></div>
+
+<main class="wrap"><div id="root"></div>
+  <div class="empty" id="empty" style="display:none">Ничего не найдено — измени запрос.</div>
+</main>
+
+<footer>
+  Источник-агрегатор: <a href="https://lolol.farm" target="_blank" rel="noopener">lolol.farm</a> ·
+  <a href="index.html">🔎 Поиск событий</a> · <a href="README.md">README</a> ·
+  Сделано ❤️ для русскоязычного ИБ-комьюнити
+</footer>
+
+<script>
+(function(){
+  // [name, code, platform, description, tags[], url]
+  var SECTIONS = [
+    ["⭐ Мета-каталоги и агрегаторы","var(--gold)",[
+      ["lolol.farm","LF","всё","Единый поисковый индекс всех LOL-проектов сообщества (31 проект), кросс-ссылки по платформам и тегам. Точка входа.",["агрегатор"],"lolol.farm"],
+      ["Project-Lost","PL","cross","Куратор инструментов, которыми злоумышленники обходят средства защиты и проводят атаки.",["security-tools"],"0xanalyst.github.io/Project-Lost","github.com/0xanalyst/Project-Lost"],
+      ["lolbins-cti driven","CD","windows","Как LOLBin'ы используются реальными группами в ходе вторжений — в наглядном, «переваримом» графическом виде.",["binaries","threat-intel"],"lolbins-ctidriven.vercel.app"]
+    ]],
+    ["🪟 Windows · бинари · DLL · API · приложения","var(--win)",[
+      ["LOLBAS","LB","windows","Флагман: штатные бинари, скрипты и библиотеки Windows (certutil, rundll32, mshta…) для Living-off-the-Land.",["binaries"],"lolbas-project.github.io","github.com/LOLBAS-Project/LOLBAS"],
+      ["LOLApps","LA","windows","Злоупотребление встроенными и сторонними приложениями — не только командной строкой.",["applications"],"lolapps-project.github.io","github.com/LOLAPPS-Project/LOLAPPS-Project.github.io"],
+      ["HijackLibs","HL","windows","База кандидатов на DLL hijacking / sideloading для Windows-окружений.",["DLL-hijacking"],"hijacklibs.net","github.com/wietze/HijackLibs"],
+      ["MalAPI.io","MA","windows","Каталог Windows API-функций, часто используемых вредоносным ПО.",["APIs"],"malapi.io"],
+      ["LOLAPI","LP","windows/cloud","Реально злоупотребляемые API (Windows, облако, браузер) с детект-стратегиями и PoC.",["APIs","cloud"],"themagicclaw.github.io/LOLAPI","github.com/themagicclaw/LOLAPI"],
+      ["WTFBins","WB","windows","Бинари, которые ведут себя как малварь, хотя таковой не являются — помогают отсекать ложные срабатывания.",["binaries"],"wtfbins.wtf"],
+      ["LOFL Project","LF2","windows","Living Off the Foreign Land: командлеты/бинари для действий с локального Windows против удалённых систем.",["binaries"],"lofl-project.github.io","github.com/LOFL-Project/LOFL-Project.github.io"]
+    ]],
+    ["🏢 Active Directory · Red Team","var(--ad)",[
+      ["WADComs","WC","windows/AD","Интерактивная шпаргалка offensive-команд и инструментов для Windows/Active Directory.",["active-directory","red-team"],"wadcoms.github.io","github.com/WADComs/WADComs.github.io"],
+      ["LOLAD","AD","windows/AD","Коллекция техник Active Directory «за счёт легитимного» для offensive-операций и red team.",["active-directory","red-team"],"lolad-project.github.io","github.com/LOLAD-Project/LOLAD-Project.github.io"],
+      ["Bring Your Own Land","BY","windows","BYOL — техника: оператор приносит свои инструменты вместо использования имеющихся на хосте (Mandiant).",["red-team"],"mandiant.com"]
+    ]],
+    ["🐧 Linux · 🍎 macOS","var(--nix)",[
+      ["GTFOBins","GB","linux","Флагман *nix: штатные бинари для обхода локальных ограничений и эскалации в misconfig-системах.",["binaries"],"gtfobins.github.io","github.com/GTFOBins/GTFOBins.github.io"],
+      ["LOOBins","LO","macos","Living Off the Orchard: встроенные бинари macOS и то, как их злоупотребляют атакующие.",["binaries"],"loobins.io","github.com/infosecB/LOOBins"]
+    ]],
+    ["⚙️ Драйверы · Загрузчики · Железо","var(--drv)",[
+      ["LOLDrivers","LD","windows","Крупнейшая база уязвимых и вредоносных драйверов (BYOVD) — основа детекта EDR-киллеров.",["drivers"],"loldrivers.io","github.com/magicsword-io/LOLDrivers"],
+      ["Bootloaders","BL","cross","Известные вредоносные загрузчики по разным ОС — контекст против bootkit-угроз.",["bootloaders"],"bootloaders.io","github.com/magicsword-io/bootloaders"],
+      ["Living Off The Hardware","HW","hardware","Идентификация и использование вредоносного железа и устройств.",["hardware"],"lothardware.com.tr"]
+    ]],
+    ["🖥️ RMM · Гипервизоры (ESXi)","var(--rmm)",[
+      ["LOLRMM","LR","cross","Каталог легитимных RMM-инструментов, которыми злоупотребляют атакующие, с артефактами детекта.",["RMM"],"lolrmm.io","github.com/magicsword-io/LOLRMM"],
+      ["LOLESXi","LE","esxi","Штатные бинари и скрипты VMware ESXi, применяемые в атаках (остановка/шифрование ВМ).",["binaries"],"lolesxi-project.github.io/LOLESXi/","github.com/LOLESXi-Project/LOLESXi"]
+    ]],
+    ["🌍 C2 · Exfiltration · Туннели · Доверенные сервисы","var(--net)",[
+      ["LOLC2","C2","cross","Фреймворки C2, маскирующие трафик под легитимные сервисы (Slack, Discord, Google…).",["C2"],"lolc2.github.io","github.com/lolc2/lolc2.github.io"],
+      ["LOTS Project","TS","cross","Living Off Trusted Sites: доверенные домены для фишинга, C2 и exfil (обход репутации).",["C2","exfiltration"],"lots-project.com"],
+      ["LOT Tunnels","TU","cross","Цифровые туннели, злоупотребляемые для exfil, persistence и shell-доступа.",["tunnels","exfiltration"],"lottunnels.github.io","github.com/lottunnels/lottunnels.github.io"],
+      ["LOT Webhooks","WH","cross","Webhooks, которые можно использовать для эксфильтрации данных и C2-коммуникаций.",["webhooks","C2"],"lotwebhooks.github.io","github.com/lotwebhooks/lotwebhooks.github.io"],
+      ["LOLEXFIL","EX","cross","Каталог методов эксфильтрации с детект-паттернами, IOC и mapping на ATT&CK.",["exfiltration"],"lolexfil.github.io","github.com/lolexfil/lolexfil.github.io"],
+      ["LOLFSaaS","FS","cross","Living Off Free SaaS: бесплатные SaaS-платформы для C2, exfil и тулинга (+ детект-логика).",["SaaS","C2"],"lolfsaas.github.io","github.com/lolfsaas/lolfsaas.github.io"],
+      ["LOTE","TE","cross","Living Off Trusted Email: доставка фишинга через email-функции доверенных платформ.",["phishing"],"lote-project.github.io","github.com/lote-project/lote-project.github.io"]
+    ]],
+    ["🔎 Персистентность · Файлы · Сертификаты","var(--mac)",[
+      ["Persistence Info","PI","windows","Механизмы persistence в Windows, разложенные для эффективной защиты и детекта.",["persistence"],"persistence-info.github.io","github.com/Persistence-Info/persistence-info.github.io"],
+      ["FileSec","FX","windows","Расширения файлов, применяемые атакующими для доставки, обхода и exfil.",["file-extensions"],"filesec.io"],
+      ["lolcerts","CE","windows","Code-signing сертификаты, злоупотребляемые in the wild (украденные/легально полученные для подписи малвари).",["certificates"],"github.com/WithSecureLabs/lolcerts"]
+    ]],
+    ["🛡️ Детект · CI/CD · Credentials","var(--esxi)",[
+      ["LoFP","FP","cross","Living off the False Positive: автогенерируемая коллекция ложных срабатываний по ATT&CK, источникам правил и данным.",["detection"],"br0k3nlab.com/LoFP"],
+      ["LOTP","TP","cross","CI/CD-инструменты с «foot guns» (RCE-by-design) — выполнение кода через injection в workflow.",["CI/CD"],"boostsecurityio.github.io/lotp","github.com/boostsecurityio/lotp"],
+      ["LOLCreds","LC","cross","Living Off the Land Credentials: дефолтные учётки и шаблоны раскрытия для 159 приложений/устройств (594 записи).",["credentials"],"lolcreds.haxx.it"]
+    ]]
+  ];
+
+  var total=0; SECTIONS.forEach(function(s){total+=s[2].length;});
+  document.getElementById('pills').innerHTML=
+    '<span class="pill"><b>'+total+'</b> проектов</span>'+
+    '<span class="pill"><b>'+SECTIONS.length+'</b> категорий</span>'+
+    '<span class="pill">🪟 Windows · 🐧 Linux · 🍎 macOS · 🖥️ ESXi</span>';
+
+  function fixUrl(u){return /^https?:\/\//i.test(u)?u:'https://'+u;}
+  function esc(s){return s.replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+  var q='';
+  function hl(s){ if(!q)return esc(s); try{return esc(s).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>');}catch(e){return esc(s);} }
+
+  function card(t,c){
+    var tags=t[4].map(function(x){return '<span class="tg">'+hl(x)+'</span>';}).join('');
+    return '<div class="card" style="--c:'+c+'">'+
+      '<div class="ct"><span class="badge" style="background:'+c+'">'+t[1]+'</span>'+
+      '<span class="name">'+hl(t[0])+'</span><span class="plat">'+esc(t[2])+'</span></div>'+
+      '<p class="desc">'+hl(t[3])+'</p>'+
+      (tags?'<div class="tagline2">'+tags+'</div>':'')+
+      '<a class="go" href="'+fixUrl(t[5])+'" target="_blank" rel="noopener">'+esc(t[5])+' ↗</a>'+
+      (t[6]?'<a class="go gh" href="'+fixUrl(t[6])+'" target="_blank" rel="noopener">⌥ GitHub: '+esc(t[6])+' ↗</a>':'')+
+      '</div>';
+  }
+  function match(t){ if(!q)return true;
+    return (t[0]+' '+t[2]+' '+t[3]+' '+t[4].join(' ')).toLowerCase().indexOf(q)!==-1; }
+
+  var root=document.getElementById('root'), empty=document.getElementById('empty');
+  function render(){
+    var html='', shown=0;
+    SECTIONS.forEach(function(s){
+      var items=s[2].filter(match); if(!items.length) return; shown+=items.length;
+      html+='<section class="sec" style="--c:'+s[1]+'"><h2><span class="bar"></span>'+s[0]+' <span class="n">'+items.length+'</span></h2>'+
+        '<div class="grid">'+items.map(function(t){return card(t,s[1]);}).join('')+'</div></section>';
+    });
+    root.innerHTML=html; empty.style.display=shown?'none':'block';
+  }
+  var qi=document.getElementById('q'),tm;
+  qi.oninput=function(){clearTimeout(tm);tm=setTimeout(function(){q=qi.value.trim().toLowerCase();render();},90);};
+  document.addEventListener('keydown',function(e){
+    if(e.key==='/'&&document.activeElement!==qi){e.preventDefault();qi.focus();}
+    if(e.key==='Escape'){qi.value='';q='';render();qi.blur();}
+  });
+  render();
+})();
+</script>
+</body>
+</html>

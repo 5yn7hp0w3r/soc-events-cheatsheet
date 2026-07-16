@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Events Cheat Sheet — поиск по событиям Windows / Linux</title>
+<meta name="description" content="Интерактивный справочник событий Windows/Linux для SOC: поиск по Event ID, IoC, SPL-запросам, фильтры по категории, важности и MITRE ATT&CK.">
+<style>
+  :root{
+    --bg:#0a0d13; --bg-soft:#0f141c; --panel:#141a24; --panel2:#1a2130; --border:#242c3a; --border2:#303a4d;
+    --fg:#e8eef6; --fg2:#9aa7b8; --fg3:#5f6b7d;
+    --accent:#4db8ff; --accent2:#2f81f7; --accent-glow:rgba(77,184,255,.25);
+    --crit:#ff5d57; --high:#ff9f45; --med:#e8c14a; --low:#42c76a; --info:#4db8ff; --tool:#c08bff;
+    --atk:#ff5d57; --atk-bg:rgba(255,93,87,.13); --def:#4db8ff; --def-bg:rgba(77,184,255,.13);
+    --err:#ff8a5c; --err-bg:rgba(255,138,92,.13); --lt:#5ad1c8; --lt-bg:rgba(90,209,200,.13);
+    --code:#070a0f; --mono:'SFMono-Regular',ui-monospace,Consolas,'Liberation Mono',Menlo,monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased;}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  ::selection{background:var(--accent-glow)}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+
+  /* ---------- NAV ---------- */
+  .topnav{border-bottom:1px solid var(--border);background:rgba(10,13,19,.85);backdrop-filter:blur(10px)}
+  .topnav .wrap{display:flex;align-items:center;gap:14px;height:52px}
+  .topnav a{color:var(--fg2);font-size:14px;padding:6px 11px;border-radius:8px}
+  .topnav a:hover{color:var(--fg);background:var(--panel);text-decoration:none}
+  .topnav a.here{color:var(--fg);background:var(--panel);border:1px solid var(--border)}
+  .topnav .sp{flex:1}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border);
+    background:radial-gradient(1200px 400px at 15% -10%,rgba(47,129,247,.18),transparent 60%),
+               radial-gradient(900px 380px at 90% -20%,rgba(192,139,255,.14),transparent 55%),
+               linear-gradient(180deg,#0d1219 0%,#0a0d13 100%);}
+  .hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+    background-size:44px 44px;mask-image:radial-gradient(700px 300px at 30% 0%,#000,transparent 75%);}
+  .hero-in{position:relative;z-index:1;padding:38px 0 26px}
+  .brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .brand h1{margin:0;font-size:30px;letter-spacing:-.6px;font-weight:800}
+  .brand .logo{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:22px;
+    background:linear-gradient(145deg,#1c2634,#131a26);border:1px solid var(--border2);box-shadow:0 0 24px var(--accent-glow)}
+  .tagline{margin:12px 0 0;color:var(--fg2);font-size:15px;max-width:720px}
+  .tagline b{color:var(--fg)}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:rgba(20,26,36,.7);border:1px solid var(--border);
+    border-radius:22px;padding:6px 13px;font-size:12.5px;color:var(--fg2);backdrop-filter:blur(6px)}
+  .pill b{color:var(--fg);font-weight:700}
+  .pill .dot{width:7px;height:7px;border-radius:50%}
+
+  /* ---------- CONTROLS ---------- */
+  .controls{position:sticky;top:0;z-index:30;background:rgba(10,13,19,.82);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);padding:14px 0}
+  .search{position:relative}
+  .search input{width:100%;padding:14px 44px 14px 46px;font-size:15.5px;
+    background:var(--panel);border:1px solid var(--border2);border-radius:12px;color:var(--fg);transition:.15s}
+  .search input::placeholder{color:var(--fg3)}
+  .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-glow)}
+  .search .ic{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:19px;height:19px;fill:var(--fg3)}
+  .search kbd{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;
+    color:var(--fg3);border:1px solid var(--border2);border-radius:6px;padding:2px 7px;background:var(--bg-soft)}
+
+  .filters{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+  .frow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .flabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--fg3);margin-right:4px;min-width:74px}
+  .chip{cursor:pointer;user-select:none;font-size:13px;padding:6px 12px;border-radius:18px;display:inline-flex;align-items:center;gap:7px;
+    background:var(--panel);border:1px solid var(--border);color:var(--fg2);transition:.13s;white-space:nowrap}
+  .chip:hover{border-color:var(--border2);color:var(--fg);transform:translateY(-1px)}
+  .chip.active{background:linear-gradient(145deg,var(--accent2),#2564d6);border-color:var(--accent2);color:#fff;box-shadow:0 3px 14px rgba(47,129,247,.35)}
+  .chip .cnt{font-size:11px;opacity:.7;font-variant-numeric:tabular-nums}
+  .chip.active .cnt{opacity:.9}
+  .chip .sd{width:8px;height:8px;border-radius:50%}
+  select{background:var(--panel);border:1px solid var(--border);color:var(--fg);border-radius:10px;
+    padding:7px 30px 7px 12px;font-size:13px;cursor:pointer;max-width:260px;
+    -webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239aa7b8'><path d='M6 8.5 1.5 4h9z'/></svg>");
+    background-repeat:no-repeat;background-position:right 10px center}
+  select:focus{outline:none;border-color:var(--accent)}
+  .reset{cursor:pointer;font-size:12.5px;color:var(--fg3);border:1px solid transparent;padding:6px 10px;border-radius:8px}
+  .reset:hover{color:var(--accent);border-color:var(--border)}
+  .expcb{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg2);cursor:pointer;user-select:none;padding:6px 10px;border:1px solid var(--border);border-radius:8px}
+  .expcb:hover{color:var(--fg);border-color:var(--border2)}
+  .expcb input{accent-color:var(--accent);cursor:pointer}
+
+  .meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 0 4px;color:var(--fg3);font-size:13px}
+  .meta b{color:var(--fg)}
+  main{padding-bottom:70px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+
+  /* ---------- CARD ---------- */
+  .card{position:relative;background:linear-gradient(180deg,var(--panel),#121826);border:1px solid var(--border);
+    border-radius:var(--r);overflow:hidden;transition:.15s}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--sevc,var(--border2));opacity:.9}
+  .card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .card.open{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent-glow),0 12px 34px rgba(0,0,0,.4)}
+  .chead{padding:14px 16px 14px 18px;cursor:pointer;display:flex;flex-direction:column;gap:8px}
+  .ctop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .eid{font-family:var(--mono);font-size:12.5px;font-weight:700;background:var(--bg-soft);border:1px solid var(--border2);
+    border-radius:7px;padding:2px 8px;color:var(--accent)}
+  .sev{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:11px;text-transform:uppercase;letter-spacing:.4px;
+    display:inline-flex;align-items:center;gap:5px}
+  .sev .sd{width:7px;height:7px;border-radius:50%}
+  .src{margin-left:auto;font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:11px;background:var(--bg-soft);
+    color:var(--fg2);border:1px solid var(--border)}
+  .src.Attack{color:var(--atk);background:var(--atk-bg);border-color:rgba(255,93,87,.45);font-weight:700}
+  .src.Defense{color:var(--def);background:var(--def-bg);border-color:rgba(77,184,255,.45);font-weight:700}
+  .src.Linux{color:#8fe3a8;border-color:rgba(66,199,106,.35)}
+  .src.Sysmon{color:#7fc7ff;border-color:rgba(77,184,255,.35)}
+  .src.Error{color:var(--err);background:var(--err-bg);border-color:rgba(255,138,92,.45);font-weight:700}
+  .src.LogonType{color:var(--lt);background:var(--lt-bg);border-color:rgba(90,209,200,.45);font-weight:700}
+  .chip.active[data-val="Attack"]{background:linear-gradient(145deg,#e0403a,#b52e29);border-color:#e0403a;box-shadow:0 3px 14px rgba(255,93,87,.35)}
+  .chip.active[data-val="Defense"]{background:linear-gradient(145deg,#2f81f7,#2564d6);border-color:#2f81f7;box-shadow:0 3px 14px rgba(47,129,247,.35)}
+  .ctitle{font-size:15.5px;font-weight:650;color:var(--fg);line-height:1.35}
+  .csub{font-size:13px;color:var(--fg2)}
+  .cgroups{display:flex;flex-wrap:wrap;gap:5px}
+  .gtag{font-size:11px;color:var(--fg2);background:rgba(255,255,255,.035);border:1px solid var(--border);border-radius:7px;padding:1px 8px}
+  .exp{margin-left:auto;color:var(--fg3);transition:.2s;flex-shrink:0}
+  .card.open .exp{transform:rotate(180deg);color:var(--accent)}
+
+  .cbody{display:none;border-top:1px solid var(--border);padding:2px 16px 16px 18px}
+  .card.open .cbody{display:block;animation:fade .22s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .field{margin-top:14px}
+  .field h4{margin:0 0 6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--fg3)}
+  .field .val{font-size:13.5px;white-space:pre-wrap;color:var(--fg)}
+  .field.ioc h4{color:var(--high)} .field.fp h4{color:var(--low)}
+  .codeblk{position:relative}
+  .codeblk .copy{position:absolute;top:8px;right:8px;font-size:11px;color:var(--fg2);background:var(--panel2);
+    border:1px solid var(--border2);border-radius:7px;padding:3px 9px;cursor:pointer;transition:.12s;opacity:.85}
+  .codeblk .copy:hover{color:var(--fg);border-color:var(--accent);opacity:1}
+  .codeblk .copy.ok{color:var(--low);border-color:var(--low)}
+  pre{margin:0;background:var(--code);border:1px solid var(--border);border-radius:10px;padding:12px 13px;overflow-x:auto;
+    font-family:var(--mono);font-size:12.5px;color:#c7d3e0;white-space:pre;line-height:1.55}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+  .ttag{cursor:pointer;font-family:var(--mono);font-size:11.5px;background:rgba(192,139,255,.12);color:var(--tool);
+    border:1px solid rgba(192,139,255,.35);border-radius:7px;padding:2px 8px;transition:.12s}
+  .ttag:hover{background:rgba(192,139,255,.25);border-color:var(--tool)}
+  .doc-link{font-size:12.5px;word-break:break-all}
+
+  .empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--fg3)}
+  .empty svg{width:48px;height:48px;fill:var(--fg3);opacity:.5;margin-bottom:12px}
+  .empty b{color:var(--fg2)}
+  footer{border-top:1px solid var(--border);text-align:center;padding:26px 20px;color:var(--fg3);font-size:12.5px}
+  mark{background:rgba(232,193,74,.32);color:inherit;border-radius:3px;padding:0 2px}
+  .warn{margin:24px auto;max-width:760px;padding:16px 20px;background:rgba(255,93,87,.1);border:1px solid rgba(255,93,87,.4);border-radius:12px;color:#ffb3af}
+  .backtop{position:fixed;right:20px;bottom:20px;z-index:40;width:44px;height:44px;border-radius:12px;display:none;
+    place-items:center;cursor:pointer;background:var(--panel2);border:1px solid var(--border2);color:var(--fg2);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .backtop:hover{color:var(--fg);border-color:var(--accent)}
+  .backtop.show{display:grid}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}.brand h1{font-size:24px}.flabel{min-width:100%}}
+</style>
+</head>
+<body>
+
+<nav class="topnav"><div class="wrap">
+  <a href="index.html" class="here">🔎 Поиск событий</a>
+  <a href="lol-links.html">🌐 LOL Links</a>
+  <span class="sp"></span>
+  <a href="https://github.com/5yn7hp0w3r/soc-events-cheatsheet" target="_blank" rel="noopener">GitHub ↗</a>
+</div></nav>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div class="brand">
+      <span class="logo">🛡️</span>
+      <h1>SOC Events Cheat Sheet</h1>
+    </div>
+    <p class="tagline">Интерактивный справочник событий <b>Windows</b> и <b>Linux</b> для SOC-аналитиков, threat hunter'ов и IR-инженеров.
+       Поиск по Event ID, IoC и SPL-запросам · фильтры по категории, важности и <b>MITRE ATT&amp;CK</b>. На русском.</p>
+    <div class="pills" id="pills"></div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="search">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg>
+      <input id="q" type="search" placeholder="Поиск: 4624, 4688, 4625 (сразу несколько ID) · IoC · процесс · T1078 · mimikatz…" autocomplete="off" spellcheck="false">
+      <kbd>/</kbd>
+    </div>
+    <div class="filters">
+      <div class="frow"><span class="flabel">Источник</span><div id="srcChips"></div></div>
+      <div class="frow"><span class="flabel">Категория</span>
+        <select id="catSel"><option value="">Все категории</option></select>
+        <span class="flabel" style="min-width:auto;margin-left:6px">MITRE</span>
+        <select id="mitreSel"><option value="">Все техники</option></select>
+      </div>
+      <div class="frow"><span class="flabel">Важность</span><div id="sevChips"></div>
+        <label class="expcb"><input type="checkbox" id="idOnly"> 🎯 по Event ID</label>
+        <label class="expcb"><input type="checkbox" id="expAll"> развернуть все</label>
+        <span class="reset" id="reset">✕ сбросить фильтры</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="meta" id="meta"></div>
+  <main><div class="grid" id="grid"></div></main>
+</div>
+
+<div class="backtop" id="backtop" title="Наверх">↑</div>
+
+<footer>
+  Справочник для SOC-аналитиков, threat hunter'ов и IR-инженеров ·
+  <a href="lol-links.html">🌐 LOL Links</a> · <a href="README.md">README</a> ·
+  <a href="https://github.com/5yn7hp0w3r/soc-events-cheatsheet">GitHub</a> ·
+  Сделано ❤️ для русскоязычного ИБ-комьюнити
+</footer>
+
+<script src="data.js"></script>
+<script>
+(function(){
+  "use strict";
+  var D = window.SOC_DATA;
+  if(!D){ document.querySelector('main').innerHTML =
+    '<div class="warn"><b>Не загружены данные (data.js).</b><br>Проверь, что рядом с index.html лежит файл <code>data.js</code>.</div>'; return; }
+  function v(x){ return (x===null||x===undefined||x==='') ? '' : String(x); }
+
+  // ---- карта Event ID -> функциональная группа (из пофункциональных листов) ----
+  var groupDefs = [
+    ['1)Logon','Logon'],['2)Management','Управление УЗ'],['3)Process&Tasks','Процессы / Задачи'],
+    ['4)Audit-access','Аудит-доступ'],['5)Discovery-powershell','Discovery / PowerShell'],
+    ['6)System-Network','Система / Сеть'],['7)RDP','RDP'],
+    ['9)Active-Directory','Active Directory'],['10)Windows-Defender','Windows Defender']
+  ];
+  var eid2groups = {};
+  groupDefs.forEach(function(gd){
+    (D[gd[0]]||[]).forEach(function(r){
+      var e=v(r['Event ID']); if(!e) return;
+      (eid2groups[e]=eid2groups[e]||[]); if(eid2groups[e].indexOf(gd[1])===-1) eid2groups[e].push(gd[1]);
+    });
+  });
+  // события из листа «Popular events» → отдельная категория «⭐ Популярные»
+  var popularEids = {};
+  (D['Popular events']||[]).forEach(function(r){ var e=v(r['Event ID']); if(e) popularEids[e]=1; });
+  function winFallback(cat){
+    var c=(cat||'').toLowerCase();
+    if(/defender|антивирус/.test(c)) return 'Windows Defender';
+    if(/kerberos|довери|компьютеров|dcsync|каталог|репликац|сертификац/.test(c)) return 'Active Directory';
+    if(/rdp/.test(c)) return 'RDP';
+    if(/powershell|discovery|разведк/.test(c)) return 'Discovery / PowerShell';
+    if(/процесс|планировщик|служб|wmi|applocker|wdac|rpc/.test(c)) return 'Процессы / Задачи';
+    if(/доступ|разрешен|дескриптор|ресурс|объект/.test(c)) return 'Аудит-доступ';
+    if(/управлен|групп/.test(c)) return 'Управление УЗ';
+    if(/сеть|брандмауэр|bits|систем|журнал/.test(c)) return 'Система / Сеть';
+    if(/аутентиф|вход|выход|credential|привилег/.test(c)) return 'Logon';
+    return 'Прочее';
+  }
+  function linuxGroup(cat){
+    var c=(cat||'').toLowerCase();
+    if(/execution|process|процесс|sysmon/.test(c)) return 'Execution / Процессы';
+    if(/privilege/.test(c)) return 'Privilege Escalation';
+    if(/persistence/.test(c)) return 'Persistence';
+    if(/evasion|defense/.test(c)) return 'Defense Evasion';
+    if(/ssh/.test(c)) return 'SSH';
+    if(/credential|аутентиф/.test(c)) return 'Credential Access / Auth';
+    if(/учёт|учет|account/.test(c)) return 'Управление учётками';
+    if(/network|c2|command|сеть/.test(c)) return 'Network / C2';
+    if(/docker|container|контейнер/.test(c)) return 'Docker / контейнеры';
+    if(/file|файл/.test(c)) return 'Файловая система';
+    if(/kernel|selinux|\bmac\b|ядро/.test(c)) return 'Kernel / LSM';
+    if(/supply|python/.test(c)) return 'Supply Chain';
+    if(/anomaly|аномал/.test(c)) return 'Аномалии';
+    return cat||'Linux';
+  }
+
+  // ---- нормализация ----
+  var records=[];
+  (D['WinEvents_ALL']||[]).forEach(function(r){
+    if(!v(r['Event ID'])) return;
+    var id=v(r['Event ID']);
+    var g=(eid2groups[id]||[]).slice();
+    if(!g.length) g=[winFallback(v(r['Категория']))];
+    if(popularEids[id]) g.unshift('⭐ Популярные');
+    records.push({src:'Windows',id:id,title:v(r['Название события']),cat:v(r['Категория']),groups:g,
+      log:v(r['Лог']),sev:v(r['Важность']),freq:v(r['Частота']),desc:v(r['Описание']),details:v(r['Подробности']),
+      ioc:v(r['Индикаторы атаки']),fp:v(r['False Positive (легитимные срабатывания)']),mitre:v(r['MITRE TTP']),
+      scen:v(r['Типичные сценарии']),fields:v(r['Ключевые поля']),spl:v(r['SPL-шаблон']),corr:v(r['Корреляции']),
+      doc:v(r['Документация для данного EventCode'])});
+  });
+  (D['8)Sysmon']||[]).forEach(function(r){
+    if(!v(r['ID'])) return;
+    records.push({src:'Sysmon',id:'Sysmon '+v(r['ID']),title:v(r['Название события']),cat:v(r['Категория']),
+      groups:[v(r['Категория'])||'Sysmon'],log:v(r['Лог']),sev:v(r['Важность']),freq:v(r['Частота']),desc:v(r['Описание']),
+      ioc:v(r['Индикаторы атаки']),mitre:v(r['MITRE ATT&CK']),scen:v(r['Типичные сценарии']),fields:v(r['Поля события']),
+      spl:v(r['SPL-шаблон']),corr:v(r['Корреляции']),doc:v(r['Документация'])});
+  });
+  (D['LINUX']||[]).forEach(function(r){
+    if(!v(r['Название события'])) return;
+    records.push({src:'Linux',id:v(r['ID / Тип']),title:v(r['Название события']),cat:v(r['Категория']),
+      groups:[linuxGroup(v(r['Категория']))],log:v(r['Источник / Лог']),sev:v(r['Важность']),freq:v(r['Частота']),
+      desc:v(r['Описание']),ioc:v(r['Индикаторы атаки']),cli:v(r['Где проверить (CLI / journalctl)']),
+      scen:v(r['Типичные сценарии']),mitre:v(r['MITRE ATT&CK']),corr:v(r['Корреляции']),fields:v(r['Ключевые поля']),
+      spl:v(r['SPL-шаблон']),doc:v(r['Документация'])});
+  });
+  (D['Инструменты атакующих']||[]).forEach(function(r){
+    if(!v(r['name'])) return;
+    records.push({src:'Attack',id:v(r['name']),title:v(r['name']),cat:v(r['category']),groups:[v(r['category'])||'Инструмент'],
+      log:v(r['platform']),sev:'',desc:v(r['description']),mitre:v(r['mitre_ttp']),proc:v(r['process_names']),
+      eventids:v(r['event_ids']),patterns:v(r['patterns']),doc:v(r['reference'])});
+  });
+  (D['Инструменты защитников']||[]).forEach(function(r){
+    if(!v(r['name'])) return;
+    records.push({src:'Defense',id:v(r['name']),title:v(r['name']),cat:v(r['category']),groups:[v(r['category'])||'Инструмент'],
+      log:v(r['platform']),sev:'',desc:v(r['description']),proc:v(r['process_names']),
+      d3fend:v(r['d3fend']),capabilities:v(r['capabilities']),doc:v(r['reference'])});
+  });
+  // Error-коды (NTSTATUS / коды отказа) — справочник
+  (D['Error_ALL']||[]).forEach(function(r){
+    if(!v(r['Error Code'])) return;
+    records.push({src:'Error',id:v(r['Error Code']),title:v(r['Название']),cat:v(r['Категория']),groups:[v(r['Категория'])||'Error'],
+      sev:'',desc:v(r['Описание']),dec:v(r['Десятичный код']),typical:v(r['Типичные события']),
+      soc:v(r['Значение для SOC']),reco:v(r['Рекомендации'])});
+  });
+  // Logon Types (типы входа) — справочник
+  (D['Logon types']||[]).forEach(function(r){
+    if(!v(r['Тип'])) return;
+    records.push({src:'LogonType',id:'Type '+v(r['Тип']),title:v(r['Название']),cat:'Logon Type',groups:['Logon Type'],
+      sev:'',desc:v(r['Описание']),ltsource:v(r['Типичный источник событий']),example:v(r['Пример'])});
+  });
+
+  // ---- индексы ----
+  var mitreRe=/T\d{4}(?:\.\d{3})?|TA\d{4}/g, mitreSet={};
+  records.forEach(function(r){
+    r._blob=[r.id,r.title,r.cat,r.log,r.desc,r.details,r.ioc,r.fp,r.mitre,r.scen,r.fields,r.spl,r.corr,r.cli,r.proc,r.eventids,r.patterns,r.d3fend,r.capabilities,r.dec,r.typical,r.soc,r.reco,r.ltsource,r.example,(r.groups||[]).join(' ')].join(' ').toLowerCase();
+    r._idtok=(r.id||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    r._mitre=[]; var m; while((m=mitreRe.exec(r.mitre||''))!==null){ r._mitre.push(m[0]); mitreSet[m[0]]=(mitreSet[m[0]]||0)+1; } mitreRe.lastIndex=0;
+  });
+  function sevKey(s){s=(s||'').toLowerCase();
+    if(s.indexOf('крит')===0)return'critical';if(s.indexOf('выс')===0)return'high';if(s.indexOf('сред')===0)return'medium';
+    if(s.indexOf('низ')===0)return'low';if(s.indexOf('инф')===0)return'info';return'';}
+  var SEVC={critical:'var(--crit)',high:'var(--high)',medium:'var(--med)',low:'var(--low)',info:'var(--info)'};
+
+  // ---- pills / stats ----
+  var counts={Windows:0,Sysmon:0,Linux:0,Attack:0,Defense:0,Error:0,LogonType:0}; records.forEach(function(r){counts[r.src]++});
+  document.getElementById('pills').innerHTML=
+    '<span class="pill"><b>'+records.length+'</b> записей</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--info)"></span><b>'+counts.Windows+'</b> Windows Event ID</span>'+
+    '<span class="pill"><span class="dot" style="background:#7fc7ff"></span><b>'+counts.Sysmon+'</b> Sysmon</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--low)"></span><b>'+counts.Linux+'</b> Linux</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--atk)"></span><b>'+counts.Attack+'</b> инстр. атаки</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--def)"></span><b>'+counts.Defense+'</b> инстр. защиты</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--err)"></span><b>'+counts.Error+'</b> Error-кодов</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--lt)"></span><b>'+counts.LogonType+'</b> Logon Types</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--high)"></span><b>'+Object.keys(mitreSet).length+'</b> техник MITRE</span>';
+
+  // ---- state ----
+  var state={q:'',src:'',sev:[],cat:'',mitre:'',expand:false,idOnly:false};
+  var sevRu={critical:'Критич.',high:'Высокая',medium:'Средняя',low:'Низкая',info:'Инфо'};
+
+  // источники с счётчиками
+  var srcDefs=[['','Все',records.length],['Windows','Windows',counts.Windows],['Sysmon','Sysmon',counts.Sysmon],['Linux','Linux',counts.Linux],['Attack','⚔️ Атака',counts.Attack],['Defense','🛡️ Защита',counts.Defense],['Error','❌ Error-коды',counts.Error],['LogonType','🔑 Logon Types',counts.LogonType]];
+  var srcEl=document.getElementById('srcChips');
+  srcDefs.forEach(function(c){
+    var b=document.createElement('span'); b.className='chip'+(state.src===c[0]?' active':''); b.dataset.val=c[0];
+    b.innerHTML=c[1]+' <span class="cnt">'+c[2]+'</span>';
+    b.onclick=function(){ state.src=c[0]; state.cat='';
+      [].forEach.call(srcEl.children,function(x){x.classList.toggle('active',x.dataset.val===c[0])});
+      buildCats(); render(); };
+    srcEl.appendChild(b);
+  });
+
+  var sevDefs=[['','Все'],['critical','Критич.'],['high','Высокая'],['medium','Средняя'],['low','Низкая'],['info','Инфо']];
+  var sevEl=document.getElementById('sevChips');
+  function syncSevChips(){
+    [].forEach.call(sevEl.children,function(x){
+      var val=x.dataset.val;
+      x.classList.toggle('active', val==='' ? state.sev.length===0 : state.sev.indexOf(val)!==-1);
+    });
+  }
+  sevDefs.forEach(function(c){
+    var b=document.createElement('span'); b.className='chip'+(c[0]===''?' active':''); b.dataset.val=c[0];
+    b.innerHTML=(c[0]?'<span class="sd" style="background:'+SEVC[c[0]]+'"></span>':'')+c[1];
+    b.onclick=function(){
+      if(c[0]===''){ state.sev=[]; }
+      else { var i=state.sev.indexOf(c[0]); if(i===-1) state.sev.push(c[0]); else state.sev.splice(i,1); }
+      syncSevChips(); render();
+    };
+    sevEl.appendChild(b);
+  });
+
+  // категории зависят от выбранного источника
+  var catSel=document.getElementById('catSel');
+  function buildCats(){
+    var m={};
+    records.forEach(function(r){ if(state.src && r.src!==state.src) return;
+      (r.groups||[]).forEach(function(g){ if(g) m[g]=(m[g]||0)+1; }); });
+    var keys=Object.keys(m).sort(function(a,b){return m[b]-m[a] || a.localeCompare(b,'ru');});
+    catSel.innerHTML='<option value="">Все категории</option>'+keys.map(function(k){
+      return '<option value="'+k.replace(/"/g,'&quot;')+'">'+k+' ('+m[k]+')</option>';}).join('');
+    catSel.value=state.cat||'';
+  }
+  catSel.onchange=function(){ state.cat=catSel.value; render(); };
+  buildCats();
+
+  var msel=document.getElementById('mitreSel');
+  Object.keys(mitreSet).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true});}).forEach(function(t){
+    var o=document.createElement('option'); o.value=t; o.textContent=t+' ('+mitreSet[t]+')'; msel.appendChild(o); });
+  msel.onchange=function(){ state.mitre=msel.value; render(); };
+
+  var qinput=document.getElementById('q'),t;
+  qinput.oninput=function(){ clearTimeout(t); t=setTimeout(function(){state.q=qinput.value.trim().toLowerCase();render();},110); };
+  document.addEventListener('keydown',function(e){
+    if(e.key==='/'&&document.activeElement!==qinput){e.preventDefault();qinput.focus();}
+    if(e.key==='Escape'){qinput.value='';state.q='';render();qinput.blur();}
+  });
+  document.getElementById('reset').onclick=function(){
+    state={q:'',src:'',sev:[],cat:'',mitre:'',expand:false,idOnly:false}; qinput.value=''; msel.value='';
+    [].forEach.call(srcEl.children,function(x){x.classList.toggle('active',x.dataset.val==='')});
+    syncSevChips(); expAll.checked=false; idOnly.checked=false;
+    buildCats(); render();
+  };
+  var expAll=document.getElementById('expAll');
+  expAll.onchange=function(){ state.expand=expAll.checked; render(); };
+  var idOnly=document.getElementById('idOnly');
+  idOnly.onchange=function(){ state.idOnly=idOnly.checked; render(); };
+
+  // ---- рендер ----
+  function esc(s){return s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function fixUrl(u){u=(u||'').trim();return u&&!/^https?:\/\//i.test(u)?'https://'+u:u;}
+  // разбор запроса: "4624, 4688" или "4624 4688 4625" -> список термов (OR); иначе фраза целиком
+  function parseTerms(q){ q=(q||'').trim(); if(!q) return [];
+    if(q.indexOf(',')!==-1) return q.split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(/^[\d\s]+$/.test(q)) return q.split(/\s+/).filter(Boolean);
+    return [q]; }
+  function hl(s){ var terms=parseTerms(state.q); if(!terms.length) return esc(s);
+    var out=esc(s);
+    terms.forEach(function(t){ var q=t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      try{ out=out.replace(new RegExp('('+q+')','ig'),'<mark>$1</mark>'); }catch(e){} });
+    return out; }
+  function fld(cls,label,val){ if(!val)return''; return '<div class="field '+cls+'"><h4>'+label+'</h4><div class="val">'+hl(val)+'</div></div>'; }
+  function code(label,val){ if(!val)return'';
+    return '<div class="field"><h4>'+label+'</h4><div class="codeblk"><button class="copy" data-code="'+esc(val)+'">копировать</button><pre>'+hl(val)+'</pre></div></div>'; }
+  function ttags(label,val){ if(!val)return'';
+    var seen={},tags=val.split(/[,\s/]+/).filter(function(x){return x&&/^T[A]?\d/.test(x)&&!seen[x]&&(seen[x]=1);})
+      .map(function(x){return '<span class="ttag" data-t="'+esc(x)+'">'+esc(x)+'</span>';}).join('');
+    if(!tags) return fld('','MITRE ATT&CK',val);
+    return '<div class="field"><h4>MITRE ATT&CK</h4><div class="tags">'+tags+'</div></div>'; }
+
+  function card(r,i){
+    var sev=sevKey(r.sev);
+    var gtags=(r.groups||[]).filter(Boolean).map(function(g){return '<span class="gtag">'+esc(g)+'</span>';}).join('');
+    var head='<div class="chead" data-i="'+i+'"><div class="ctop">'+
+      (r.id?'<span class="eid">'+hl(r.id)+'</span>':'')+
+      (sev?'<span class="sev" style="color:'+SEVC[sev]+';background:'+SEVC[sev].replace('var(','rgba(').replace(')',',0.12)')+';border:1px solid '+SEVC[sev]+'"><span class="sd" style="background:'+SEVC[sev]+'"></span>'+esc(r.sev)+'</span>':'')+
+      '<span class="src '+r.src+'">'+r.src+'</span></div>'+
+      (r.title?'<div class="ctitle">'+hl(r.title)+'</div>':'')+
+      (r.desc?'<div class="csub">'+hl(r.desc.length>130?r.desc.slice(0,130)+'…':r.desc)+'</div>':'')+
+      '<div class="ctop"><div class="cgroups">'+gtags+'</div>'+
+      '<svg class="exp" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></div></div>';
+    var body='<div class="cbody">'+
+      (r.desc&&r.desc.length>130?fld('','Описание',r.desc):'')+
+      fld('','Подробности',r.details)+
+      fld('ioc','⚠ Индикаторы атаки (IoC)',r.ioc)+
+      fld('fp','✓ False Positive / легитимно',r.fp)+
+      fld('','Типичные сценарии',r.scen)+
+      ttags('MITRE',r.mitre)+
+      fld('','Имена процессов / файлов',r.proc)+
+      fld('','Возможности / телеметрия',r.capabilities)+
+      fld('','MITRE D3FEND',r.d3fend)+
+      fld('','Связанные Event ID',r.eventids)+
+      fld('','Паттерны в логах',r.patterns)+
+      fld('','Ключевые поля',r.fields)+
+      fld('','Десятичный код',r.dec)+
+      fld('','Типичные события',r.typical)+
+      fld('ioc','Значение для SOC',r.soc)+
+      fld('','Рекомендации',r.reco)+
+      fld('','Типичный источник событий',r.ltsource)+
+      fld('','Пример',r.example)+
+      code('SPL-шаблон',r.spl)+
+      code('Проверка (CLI / journalctl)',r.cli)+
+      code('Корреляции',r.corr)+
+      (r.doc?'<div class="field"><h4>Документация</h4><a class="doc-link" href="'+esc(fixUrl(r.doc))+'" target="_blank" rel="noopener">'+esc(r.doc)+' ↗</a></div>':'')+
+    '</div>';
+    var accent=r.src==='Attack'?'var(--atk)':(r.src==='Defense'?'var(--def)':(r.src==='Error'?'var(--err)':(r.src==='LogonType'?'var(--lt)':(sev?SEVC[sev]:'var(--border2)'))));
+    return '<div class="card'+(state.expand?' open':'')+'" style="--sevc:'+accent+'">'+head+body+'</div>';
+  }
+
+  var grid=document.getElementById('grid'), meta=document.getElementById('meta');
+  function render(){
+    var out=[],shown=0,qterms=parseTerms(state.q);
+    records.forEach(function(r,i){
+      if(state.src&&r.src!==state.src)return;
+      if(state.sev.length&&state.sev.indexOf(sevKey(r.sev))===-1)return;
+      if(state.cat&&(r.groups||[]).indexOf(state.cat)===-1)return;
+      if(state.mitre&&r._mitre.indexOf(state.mitre)===-1)return;
+      if(qterms.length){
+        var ok = state.idOnly
+          ? qterms.some(function(t){return r._idtok.indexOf(t)!==-1||(r.id||'').toLowerCase()===t;})
+          : qterms.some(function(t){return r._blob.indexOf(t)!==-1;});
+        if(!ok) return;
+      }
+      out.push(card(r,i)); shown++;
+    });
+    var srcLbl={Windows:'Windows',Sysmon:'Sysmon',Linux:'Linux',Attack:'Атака',Defense:'Защита',Error:'Error-коды',LogonType:'Logon Types'};
+    var active=[]; if(state.src)active.push(srcLbl[state.src]||state.src); if(state.cat)active.push(state.cat);
+    if(state.sev.length)active.push('важность: '+state.sev.map(function(s){return sevRu[s]||s;}).join('/'));  if(state.mitre)active.push(state.mitre); if(state.q)active.push('«'+state.q+'»');
+    meta.innerHTML='Найдено: <b>'+shown+'</b> из '+records.length+(active.length?' &nbsp;·&nbsp; фильтры: '+active.map(esc).join(', '):'');
+    grid.innerHTML=shown?out.join(''):
+      '<div class="empty"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg><div><b>Ничего не найдено.</b><br>Сбрось фильтры или измени запрос.</div></div>';
+  }
+
+  grid.addEventListener('click',function(e){
+    var cp=e.target.closest('.copy');
+    if(cp){ e.stopPropagation(); var txt=cp.getAttribute('data-code');
+      var ta=document.createElement('textarea'); ta.value=txt.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+      document.body.appendChild(ta); ta.select();
+      try{document.execCommand('copy');}catch(_){}
+      if(navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(function(){});
+      document.body.removeChild(ta);
+      cp.textContent='скопировано ✓'; cp.classList.add('ok'); setTimeout(function(){cp.textContent='копировать';cp.classList.remove('ok');},1400);
+      return; }
+    var tt=e.target.closest('.ttag');
+    if(tt){ e.stopPropagation(); state.mitre=tt.getAttribute('data-t'); msel.value=state.mitre; render(); window.scrollTo({top:0,behavior:'smooth'}); return; }
+    var h=e.target.closest('.chead'); if(h) h.parentNode.classList.toggle('open');
+  });
+
+  var backtop=document.getElementById('backtop');
+  backtop.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
+  window.addEventListener('scroll',function(){ backtop.classList.toggle('show',window.scrollY>600); });
+
+  render();
+})();
+</script>
+</body>
+</html>

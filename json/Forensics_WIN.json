@@ -1,0 +1,407 @@
+[
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Автозапуск / Persistence",
+        "Артефакт": "Run / RunOnce",
+        "Расположение": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\nHKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+        "Ключевая информация": "Программы, запускаемые при входе пользователя или старте системы. Классическое место persistence малвари. Проверять: имя, путь, подпись файла.",
+        "Инструмент анализа": "Autoruns (Sysinternals), RegRipper (plugin: run), reg.exe",
+        "Пример применения в расследовании": "Вредонос прописал себя в Run под именем svchost32.exe → подписи нет, путь %TEMP% → persistence подтверждена."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Автозапуск / Persistence",
+        "Артефакт": "Services (реестр)",
+        "Расположение": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\",
+        "Ключевая информация": "Все зарегистрированные службы: ImagePath (путь к бинарю), Start (тип запуска: 2=Auto), Type. Малварь и RAT часто регистрируются как сервис.",
+        "Инструмент анализа": "Autoruns, RegRipper (plugin: services), sc.exe, Get-Service",
+        "Пример применения в расследовании": "Backdoor зарегистрирован как сервис с ImagePath=C:\\Windows\\Temp\\svc.exe, Start=2 → ищем Event 7045 (новый сервис) в System.evtx."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Автозапуск / Persistence",
+        "Артефакт": "Scheduled Tasks (реестр)",
+        "Расположение": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\nHKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree",
+        "Ключевая информация": "Зарегистрированные задачи, их триггеры и действия. Дополнять анализом XML-файлов задач в файловой системе.",
+        "Инструмент анализа": "Autoruns, schtasks.exe, RegRipper (plugin: tasks), TaskSchedulerView",
+        "Пример применения в расследовании": "APT создал задачу с триггером OnLogon, запускающую PowerShell с -EncodedCommand → проверяем Event 4698."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Аутентификация / Credentials",
+        "Артефакт": "UserAssist",
+        "Расположение": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\UserAssist\\{GUID}\\Count",
+        "Ключевая информация": "Запущенные программы из GUI: имя (ROT-13), счётчик запусков, время последнего запуска. Доказывает факт интерактивного запуска файла.",
+        "Инструмент анализа": "RegRipper (plugin: userassist), UserAssist (NirSoft), Eric Zimmermann's RECmd",
+        "Пример применения в расследовании": "Атакующий запустил mimikatz.exe из рабочего стола → UserAssist подтверждает запуск в 14:32 с конкретного пользователя."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Выполнение программ",
+        "Артефакт": "ShimCache (AppCompatCache)",
+        "Расположение": "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCompatCache",
+        "Ключевая информация": "История запуска исполняемых файлов: путь, размер, дата модификации (не запуска!). Сохраняется до 1024 записей. Критично: наличие файла ≠ запуск.",
+        "Инструмент анализа": "AppCompatCacheParser (EZ Tools), RegRipper (plugin: appcompatcache), ShimCacheParser",
+        "Пример применения в расследовании": "Хакерский инструмент net.exe обнаружен в ShimCache по нестандартному пути → подтверждает присутствие на хосте, даже если файл удалён."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Выполнение программ",
+        "Артефакт": "Amcache.hve",
+        "Расположение": "C:\\Windows\\AppCompat\\Programs\\Amcache.hve",
+        "Ключевая информация": "SHA1 хэш исполняемых файлов, путь, версия, дата первого запуска. Позволяет идентифицировать файл по хэшу, даже если он удалён. Win8+.",
+        "Инструмент анализа": "AmcacheParser (EZ Tools), RegRipper (plugin: amcache)",
+        "Пример применения в расследовании": "Вычислили SHA1 из Amcache → VirusTotal подтвердил: это Cobalt Strike beacon. Файл уже удалён с диска."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Выполнение программ",
+        "Артефакт": "MRU (Most Recently Used)",
+        "Расположение": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RecentDocs\nHKCU\\Software\\Microsoft\\Office\\{ver}\\{app}\\File MRU",
+        "Ключевая информация": "Последние открытые документы, файлы, пути. Структурированы по расширению. Содержат Shell Item (имя, путь, дата). Office MRU хранит пути к документам.",
+        "Инструмент анализа": "RegRipper (plugin: recentdocs), MRUView (NirSoft), RECmd",
+        "Пример применения в расследовании": "Жертва открыла invoice_final.docx с сетевого пути \\\\evil-share\\payload → MRU содержит UNC-путь с timestamp."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Сеть / Lateral Movement",
+        "Артефакт": "Network Shares (реестр)",
+        "Расположение": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Shares\nHKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2",
+        "Ключевая информация": "Открытые сетевые папки, подключённые сетевые диски (MountPoints2). MountPoints2 хранит историю подключений, включая удалённые.",
+        "Инструмент анализа": "RegRipper (plugin: mountpoints2), net share, Get-SmbShare",
+        "Пример применения в расследовании": "Атакующий подключался к \\\\DC01\\C$ → запись в MountPoints2 у пользователя analyst → подтверждает lateral movement."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Системная информация",
+        "Артефакт": "SAM (Security Account Manager)",
+        "Расположение": "HKLM\\SAM\\SAM\\Domains\\Account\\Users (C:\\Windows\\System32\\config\\SAM)",
+        "Ключевая информация": "Локальные учётные записи: имена, RID, флаги (disabled, locked, admin), хэши паролей (NT hash). Хэши доступны только через теневую копию или при SYSTEM-привилегиях.",
+        "Инструмент анализа": "Impacket secretsdump.py, reg.exe (SYSTEM priv), CrackMapExec, mimikatz (lsadump::sam)",
+        "Пример применения в расследовании": "Злоумышленник создал скрытый аккаунт admin$ → SAM показывает новый RID с датой создания → Event 4720 подтверждает."
+    },
+    {
+        "Источник": "Реестр",
+        "Тип информации": "Выполнение команд",
+        "Артефакт": "TypedURLs / TypedPaths",
+        "Расположение": "HKCU\\Software\\Microsoft\\Internet Explorer\\TypedURLs\nHKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\TypedPaths",
+        "Ключевая информация": "URL, набранные вручную в IE/Edge, и пути, введённые в адресной строке Проводника. Доказывают умысел — пользователь вводил адрес вручную.",
+        "Инструмент анализа": "RegRipper (plugin: typedurls), BrowsingHistoryView (NirSoft)",
+        "Пример применения в расследовании": "Сотрудник вручную набрал URL фишингового сайта → TypedURLs содержит запись с временем → опровергает версию о случайном переходе."
+    },
+    {
+        "Источник": "EVTX (события)",
+        "Тип информации": "Аутентификация / Credentials",
+        "Артефакт": "Security.evtx",
+        "Расположение": "C:\\Windows\\System32\\winevt\\Logs\\Security.evtx",
+        "Ключевая информация": "4624/4625 (вход/отказ), 4688 (процесс), 4698 (задача), 4720/4726 (аккаунт), 1102 (очистка лога), 4768/4769 (Kerberos). Главный источник аудита ИБ.",
+        "Инструмент анализа": "EvtxECmd (EZ Tools), Hayabusa, Chainsaw, DeepBlueCLI, Get-WinEvent (PS)",
+        "Пример применения в расследовании": "Brute-force: COUNTIF 4625 по SubjectAccount > 50 за 5 мин → алерт. 1102 без 4609 перед ним → лог очищен злоумышленником."
+    },
+    {
+        "Источник": "EVTX (события)",
+        "Тип информации": "Выполнение команд",
+        "Артефакт": "PowerShell/Operational.evtx",
+        "Расположение": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-PowerShell%4Operational.evtx",
+        "Ключевая информация": "4104 (ScriptBlock — полный текст скрипта), 4103 (Module logging), 4105/4106 (старт/стоп). Лучший источник для анализа PS-атак.",
+        "Инструмент анализа": "EvtxECmd, Hayabusa, PowerShell ScriptBlock поиск в SIEM",
+        "Пример применения в расследовании": "4104 содержит -EncodedCommand → base64-декодирование → Invoke-Mimikatz внутри. CyberChef раскрывает пайлоад."
+    },
+    {
+        "Источник": "EVTX (события)",
+        "Тип информации": "Выполнение программ",
+        "Артефакт": "Sysmon.evtx",
+        "Расположение": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-Sysmon%4Operational.evtx",
+        "Ключевая информация": "EID 1 (process), 3 (network), 7 (image load), 8 (CreateRemoteThread), 11 (file create), 13 (registry), 22 (DNS), 25 (process tamper). Глубокий endpoint-аудит.",
+        "Инструмент анализа": "EvtxECmd, Hayabusa, Chainsaw, Splunk / Elastic (Sysmon field mapping)",
+        "Пример применения в расследовании": "EID 8 (CreateRemoteThread) + соурс cmd.exe, цель lsass.exe → дамп памяти через инъекцию."
+    },
+    {
+        "Источник": "EVTX (события)",
+        "Тип информации": "Сеть / Lateral Movement",
+        "Артефакт": "RDPClient / TerminalServices­RemoteConnectionManager",
+        "Расположение": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-TerminalServices-RemoteConnectionManager%4Operational.evtx\nC:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-TerminalServices-LocalSessionManager%4Operational.evtx",
+        "Ключевая информация": "1149 (удалённая аутентификация без пароля), 21/25 (сессия RDP: начало/разъединение), 1158 (выход сессии). IP-адреса и пользователь.",
+        "Инструмент анализа": "EvtxECmd, Hayabusa, mstsc архив коннекций (%APPDATA%\\Microsoft\\Terminal Server Client\\Cache)",
+        "Пример применения в расследовании": "1149 без пароля в 03:00 с внешнего IP → lateral movement RDP с пассом (лог 4624 LT=10 на целевом хосте)."
+    },
+    {
+        "Источник": "Prefetch",
+        "Тип информации": "Выполнение программ",
+        "Артефакт": "Prefetch (.pf)",
+        "Расположение": "C:\\Windows\\Prefetch\\*.pf",
+        "Ключевая информация": "Имя исполняемого файла, хэш (DWORD), до 8 времён запуска, счётчик запусков, загружаемые DLL. Работает только на Windows (Workstation), на Server отключён.",
+        "Инструмент анализа": "PECmd (EZ Tools), WinPrefetchView (NirSoft)",
+        "Пример применения в расследовании": "mimikatz.exe-файл удалён, но Prefetch остался → 6 запусков в 04:12–04:18. DLL: загружалась mimilib.dll."
+    },
+    {
+        "Источник": "Prefetch",
+        "Тип информации": "Сеть / Lateral Movement",
+        "Артефакт": "Prefetch PsExec",
+        "Расположение": "C:\\Windows\\Prefetch\\PSEXESVC.EXE-*.pf\nC:\\Windows\\Prefetch\\PSEXEC.EXE-*.pf",
+        "Ключевая информация": "PsExesvc.exe на целевом хосте = PsExec применён. PsExec.exe на источнике → инициатор. Сопоставьте времена.",
+        "Инструмент анализа": "PECmd (EZ Tools), WinPrefetchView",
+        "Пример применения в расследовании": "PSEXESVC.EXE обнаружен на DC → Event 7045 на том же хосте в тоже минуту → lateral movement подтверждён."
+    },
+    {
+        "Источник": "LNK / Shell Items",
+        "Тип информации": "Существование файлов",
+        "Артефакт": "LNK-файлы (ярлыки)",
+        "Расположение": "C:\\Users\\%USERNAME%\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\*.lnk\nC:\\Users\\%USERNAME%\\Desktop\\*.lnk",
+        "Ключевая информация": "Исходный путь файла (MAC+UNC), волюм Serial Number машины-цели, времена создания/открытия, размер, машина-оригин. MAC адрес (legacy).",
+        "Инструмент анализа": "LECmd (EZ Tools), LNKParser (Zimmermann)",
+        "Пример применения в расследовании": "LNK указывает на \\\\fileserver\\confidential\\passwords.xlsx – доказывает открытие документа на другой машине — lateral exfil."
+    },
+    {
+        "Источник": "LNK / Shell Items",
+        "Тип информации": "Существование файлов",
+        "Артефакт": "Jump Lists",
+        "Расположение": "C:\\Users\\%USERNAME%\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\AutomaticDestinations\\*.automaticDestinations-ms\nC:\\Users\\%USERNAME%\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\CustomDestinations\\*.customDestinations-ms",
+        "Ключевая информация": "Последние документы/URI по приложениям (AppID). Содержат Shell Items: путь, время доступа, размер, MAC. Очень полезны для доказательства открытия файлов.",
+        "Инструмент анализа": "JLECmd (EZ Tools)",
+        "Пример применения в расследовании": "Jump List Chrome.exe содержит URL на C2-сайт — дополняет анализ браузерной истории."
+    },
+    {
+        "Источник": "Shellbags",
+        "Тип информации": "Существование файлов",
+        "Артефакт": "Shellbags",
+        "Расположение": "HKCU\\Software\\Microsoft\\Windows\\Shell\\BagMRU\nHKCU\\Software\\Microsoft\\Windows\\Shell\\Bags\nNTUSER.DAT / UsrClass.dat",
+        "Ключевая информация": "Папки, просмотренные через Explorer: путь, время последнего просмотра (FILETIME). Фиксируют папки USB, сетевых дисков, ZIP-архивов. Даже если папка удалена.",
+        "Инструмент анализа": "ShellBagsExplorer (EZ Tools), Shellbags (RegRipper plugin)",
+        "Пример применения в расследовании": "Шеллбэги показывают: пользователь просматривал D:\\Confidential\\HR — папка удалена, но факт доступа зафиксирован."
+    },
+    {
+        "Источник": "MFT / Файловая система",
+        "Тип информации": "Существование файлов",
+        "Артефакт": "$MFT (Master File Table)",
+        "Расположение": "\\$MFT (корень NTFS-тома)",
+        "Ключевая информация": "Каждый файл/папка: имя, размер, MACB-времена, атрибуты, ADS. Удалённые файлы остаются в MFT до перезаписи. ADS — скрытые потоки (MOTW, LOLBin-полезная нагрузка).",
+        "Инструмент анализа": "MFTECmd (EZ Tools), Autopsy, KAPE + MFT module, icat (TSK)",
+        "Пример применения в расследовании": "Атакующий сохранил payload в ADS: calc.exe:hidden.exe — MFT показывает нестандартный размер и время создания."
+    },
+    {
+        "Источник": "MFT / Файловая система",
+        "Тип информации": "Существование файлов",
+        "Артефакт": "$UsnJrnl:$J (Change Journal)",
+        "Расположение": "\\$Extend\\$UsnJrnl",
+        "Ключевая информация": "Журнал изменений NTFS: создание, удаление, переименование файлов. Фиксирует даже удалённые файлы. USN циклически перезаписывается.",
+        "Инструмент анализа": "MFTECmd (EZ Tools), fsutil usn, Velociraptor artifact Windows.NTFS.UsnJrnl",
+        "Пример применения в расследовании": "Рансомвар: USN показывает всплеск шифрования файлов с точными временными метками (хронология атаки)."
+    },
+    {
+        "Источник": "Memory",
+        "Тип информации": "Выполнение команд / Credentials",
+        "Артефакт": "RAM dump (LSASS)",
+        "Расположение": "Извлечение из живого процесса lsass.exe или полного дампа памяти",
+        "Ключевая информация": "NT-хэши, Kerberos тикеты, пароли в открытом виде (WDIGEST на Win7), сессионные токены. Самый ценный credential-артефакт.",
+        "Инструмент анализа": "Volatility 3 (windows.lsadump, windows.credentials.hashdump), mimikatz (sekurlsa::logonpasswords)",
+        "Пример применения в расследовании": "Дамп lsass.exe через Task Manager: Sysmon EID 10 зафиксирует OpenProcess на lsass с стороны taskmgr.exe."
+    },
+    {
+        "Источник": "Memory",
+        "Тип информации": "Выполнение команд / Телеметрия",
+        "Артефакт": "RAM dump (процессы)",
+        "Расположение": "Full memory dump (файл VMEM/RAW/DMP)\nИнструменты: WinPmem, Magnet RAM Capture, DumpIt",
+        "Ключевая информация": "Список процессов, открытые сокеты, признаки инъекции (hollow/injected), нераспакованный PE в памяти, базовые адреса.",
+        "Инструмент анализа": "Volatility 3 (windows.pslist, windows.netscan, windows.malfind, windows.cmdline), MemProcFS",
+        "Пример применения в расследовании": "windows.malfind находит RWX-регион в explorer.exe → process injection Cobalt Strike подтверждён."
+    },
+    {
+        "Источник": "Browser",
+        "Тип информации": "Сеть / Exfiltration",
+        "Артефакт": "Browser History (Chrome/Edge)",
+        "Расположение": "Chrome: %LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\History\nEdge: %LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\History",
+        "Ключевая информация": "SQLite: URL, visit_time (WebKit-время), title, visit_count. Downloads: путь сохранения, URL-источник, время. Файл заблокирован при работе браузера.",
+        "Инструмент анализа": "BrowsingHistoryView (NirSoft), Hindsight, DB Browser for SQLite",
+        "Пример применения в расследовании": "Пользователь заходил на C2-домен за 10 мин до заражения → History фиксирует visit_time и referrer."
+    },
+    {
+        "Источник": "Browser",
+        "Тип информации": "Аутентификация / Credentials",
+        "Артефакт": "Browser Credentials (Chrome/Edge)",
+        "Расположение": "Chrome: %LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Login Data\nEdge: %LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Login Data",
+        "Ключевая информация": "SQLite: сохранённые логины/пароли (зашифрованы DPAPI). Извлечение требует дешифрования DPAPI (ключ SYSTEM+пароль пользователя).",
+        "Инструмент анализа": "HackBrowserData, SharpChromium, mimikatz (dpapi::chrome), NirSoft ChromePass",
+        "Пример применения в расследовании": "Малварь запустил HackBrowserData → Sysmon EID 11: создан Login Data.db в %TEMP% → exfil."
+    },
+    {
+        "Источник": "Network",
+        "Тип информации": "Сеть / Lateral Movement",
+        "Артефакт": "Windows Firewall Log",
+        "Расположение": "C:\\Windows\\System32\\LogFiles\\Firewall\\pfirewall.log",
+        "Ключевая информация": "Action (ALLOW/DROP), протокол, IP-адреса, порты, время. Требует включения аудита (Group Policy). Полезен для выявления C2-биков.",
+        "Инструмент анализа": "Notepad++, Log Parser Studio, Splunk / Elastic, Zeek параллельно",
+        "Пример применения в расследовании": "Egress ALLOW к 185.x.x.x:4444 с интервалом 60 сек → C2 beaconing."
+    },
+    {
+        "Источник": "Network",
+        "Тип информации": "Сеть / Lateral Movement",
+        "Артефакт": "DNS Cache",
+        "Расположение": "ipconfig /displaydns\nHKLM\\SYSTEM\\CurrentControlSet\\Services\\Dnscache\\Parameters\\Cache (volatile)",
+        "Ключевая информация": "Разрешённые DNS-имена с TTL. Волатильный артефакт — снять до перезагрузки. DNS Event Log (Microsoft-Windows-DNS-Client) хранит персистентно.",
+        "Инструмент анализа": "ipconfig /displaydns, Sysmon EID 22 (DNS query), Velociraptor",
+        "Пример применения в расследовании": "Sysmon EID 22: svchost разрешает c2-update.evil.ru — выдаёт C2 через DNS-туннелирование."
+    },
+    {
+        "Источник": "Pagefile / Hiberfil",
+        "Тип информации": "Выполнение команд / Credentials",
+        "Артефакт": "pagefile.sys / hiberfil.sys",
+        "Расположение": "C:\\pagefile.sys\nC:\\hiberfil.sys",
+        "Ключевая информация": "Фрагменты памяти, остатки строк паролей, URL, shell-команд, кода. hiberfil.sys — полный снимок оперативной памяти при гибернации.",
+        "Инструмент анализа": "Volatility 3 (после преобразования hiberfil), strings + grep, Bulk Extractor",
+        "Пример применения в расследовании": "strings pagefile.sys | grep -i password → обнаружены остатки NTLM-аутентификации."
+    },
+    {
+        "Источник": "Recycle Bin",
+        "Тип информации": "Существование файлов",
+        "Артефакт": "$Recycle.Bin / $I-файлы",
+        "Расположение": "C:\\$Recycle.Bin\\{SID}\\$I??????\nC:\\$Recycle.Bin\\{SID}\\$R??????",
+        "Ключевая информация": "$I-файл: оригинальный путь, дата удаления, размер. $R-файл: содержимое. Привязка к SID пользователя через SAM/реестр.",
+        "Инструмент анализа": "RBCmd (EZ Tools), RecycleBinEx (NirSoft)",
+        "Пример применения в расследовании": "Атакующий удалил инструмент — $I-файл раскрывает оригинальный путь (C:\\Tools\\mimikatz.exe) и дату."
+    },
+    {
+        "Источник": "Volume Shadow Copy",
+        "Тип информации": "Существование файлов",
+        "Артефакт": "VSS (Volume Shadow Copy Service)",
+        "Расположение": "\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy{N}\\\nvssadmin list shadows",
+        "Ключевая информация": "Исторические снимки файловой системы: SAM, NTDS.dit, реестр. Позволяют достать заблокированные файлы. Рансомвар часто удаляет VSS (vssadmin delete).",
+        "Инструмент анализа": "vssadmin, wmic shadowcopy, ShadowExplorer, Autopsy VSS module",
+        "Пример применения в расследовании": "Атакующий скопировал NTDS.dit через VSS → извлек всех хэшей AD (Event 4673/7036 открывал VSS-сервис)."
+    },
+    {
+        "Источник": "Scheduled Tasks (файл)",
+        "Тип информации": "Автозапуск / Persistence",
+        "Артефакт": "Task XML-файлы",
+        "Расположение": "C:\\Windows\\System32\\Tasks\\\nC:\\Windows\\SysWOW64\\Tasks\\",
+        "Ключевая информация": "XML: автор, дата регистрации, триггер, действие, RunLevel. Существуют даже после удаления из реестра. Маць MFT.",
+        "Инструмент анализа": "TaskSchedulerView (NirSoft), schtasks, Autoruns, Get-ScheduledTask",
+        "Пример применения в расследовании": "XML-файл задачи содержит -enc параметр PowerShell → base64-декодирование выявляет C2-пайлоад."
+    },
+    {
+        "Источник": "WMI",
+        "Тип информации": "Автозапуск / Persistence",
+        "Артефакт": "WMI Subscriptions",
+        "Расположение": "C:\\Windows\\System32\\wbem\\Repository\\*.data\n(OBJECTS.DATA — основной файл)",
+        "Ключевая информация": "Event Consumer, Event Filter, Binding. Скрытый persistence без записей в Run/задачах. Автозапуск при наступлении события (воход, создание процесса).",
+        "Инструмент анализа": "PyWMIPersistenceFinder, Autoruns (WMI вкладка), Get-WMIObject Win32_FilterToConsumerBinding",
+        "Пример применения в расследовании": "Апт зарегистрировал WMI Consumer с CommandLineEventConsumer, запускающим cmd /c PowerShell при нестандартном входе."
+    },
+    {
+        "Источник": "USB / Устройства",
+        "Тип информации": "Подключённые устройства",
+        "Артефакт": "USBSTOR / USB (реестр)",
+        "Расположение": "HKLM\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR\nHKLM\\SYSTEM\\CurrentControlSet\\Enum\\USB",
+        "Ключевая информация": "Подключённые USB-накопители: VID/PID, серийный номер устройства, производитель, модель, первое/последнее подключение. Серийник связывает устройство с конкретным железом.",
+        "Инструмент анализа": "USBDeview (NirSoft), RegRipper (plugin: usbstor), USB Detective, RECmd",
+        "Пример применения в расследовании": "Утечка данных: USBSTOR показывает Kingston-флешку с серийником, подключённую в 18:42 → сопоставляем с LNK/Shellbags на скопированные файлы."
+    },
+    {
+        "Источник": "USB / Устройства",
+        "Тип информации": "Подключённые устройства",
+        "Артефакт": "MountedDevices / MountPoints2",
+        "Расположение": "HKLM\\SYSTEM\\MountedDevices\nHKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2",
+        "Ключевая информация": "Сопоставление буквы диска (E:, F:) с GUID/серийником тома USB-устройства. Привязывает съёмный носитель к букве диска и пользователю, который его монтировал.",
+        "Инструмент анализа": "RegRipper (plugin: mountdev / mountpoints2), USB Detective, RECmd",
+        "Пример применения в расследовании": "Флешке присвоена буква F: у пользователя analyst → этот же том фигурирует в Shellbags F:\\stolen → подтверждает, кто именно копировал."
+    },
+    {
+        "Источник": "USB / Устройства",
+        "Тип информации": "Подключённые устройства",
+        "Артефакт": "setupapi.dev.log",
+        "Расположение": "C:\\Windows\\INF\\setupapi.dev.log",
+        "Ключевая информация": "Текстовый лог установки драйверов устройств с точными временными метками ПЕРВОГО подключения устройства. Дополняет реестровые артефакты человекочитаемой датой.",
+        "Инструмент анализа": "Любой текстовый редактор, grep/Select-String, USB Detective",
+        "Пример применения в расследовании": "Поиск по серийнику флешки в setupapi.dev.log → первое подключение к хосту зафиксировано 12.03 в 09:15 — раньше предполагаемого инцидента."
+    },
+    {
+        "Источник": "Execution (расш.)",
+        "Тип информации": "Выполнение программ / Сеть",
+        "Артефакт": "SRUM (System Resource Usage Monitor)",
+        "Расположение": "C:\\Windows\\System32\\sru\\SRUDB.dat\nHKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SRUM\\Extensions",
+        "Ключевая информация": "Поприложенческий учёт за ~30-60 дней: объём принятых/отправленных байт по процессам и пользователям (SID), время работы, энергопотребление. Доказывает факт и объём сетевой активности процесса.",
+        "Инструмент анализа": "SrumECmd (EZ Tools), srum-dump (Mark Baggett), Velociraptor",
+        "Пример применения в расследовании": "Exfiltration: SRUM показывает, что powershell.exe отправил 2 ГБ наружу за 1 час → количественное доказательство утечки данных."
+    },
+    {
+        "Источник": "Execution (расш.)",
+        "Тип информации": "Выполнение программ",
+        "Артефакт": "BAM / DAM (Background/Desktop Activity Moderator)",
+        "Расположение": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\bam\\State\\UserSettings\\{SID}\nHKLM\\SYSTEM\\CurrentControlSet\\Services\\dam\\State\\UserSettings\\{SID}",
+        "Ключевая информация": "Полный путь и время ПОСЛЕДНЕГО запуска исполняемых файлов, привязанных к SID пользователя. В отличие от ShimCache даёт именно время выполнения и привязку к пользователю. Win10+.",
+        "Инструмент анализа": "RegRipper (plugin: bam), BamParser, RECmd, Eric Zimmermann's tools",
+        "Пример применения в расследовании": "BAM фиксирует C:\\Temp\\mimikatz.exe с временем запуска 04:12 под SID конкретного юзера → привязывает выполнение к аккаунту."
+    },
+    {
+        "Источник": "EVTX (события)",
+        "Тип информации": "Системная информация",
+        "Артефакт": "System.evtx",
+        "Расположение": "C:\\Windows\\System32\\winevt\\Logs\\System.evtx",
+        "Ключевая информация": "7045 (новый сервис), 7034/7036 (сбой/смена состояния сервиса), 7040 (изменён тип запуска), 104 (очистка лога), 6005/6006 (старт/остановка Event Log), 1074 (выкл/ребут).",
+        "Инструмент анализа": "EvtxECmd (EZ Tools), Hayabusa, Chainsaw, DeepBlueCLI, Get-WinEvent",
+        "Пример применения в расследовании": "Event 7045 с ImagePath=C:\\Windows\\Temp\\svc.exe → новый сервис-backdoor; корреляция с реестровым Services и PsExec."
+    },
+    {
+        "Источник": "EVTX (события)",
+        "Тип информации": "Автозапуск / Persistence",
+        "Артефакт": "WMI-Activity/Operational.evtx",
+        "Расположение": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-WMI-Activity%4Operational.evtx",
+        "Ключевая информация": "5857-5861 (регистрация Event Consumer / Filter / Binding, выполнение provider). Фиксирует WMI-persistence и WMI-based lateral movement (wmiexec).",
+        "Инструмент анализа": "EvtxECmd, Hayabusa, Chainsaw, PyWMIPersistenceFinder",
+        "Пример применения в расследовании": "Event 5861 регистрирует CommandLineEventConsumer с PowerShell-пайлоадом → подтверждает WMI-persistence (см. строку WMI Subscriptions)."
+    },
+    {
+        "Источник": "EVTX (события)",
+        "Тип информации": "Автозапуск / Persistence",
+        "Артефакт": "TaskScheduler/Operational.evtx",
+        "Расположение": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-TaskScheduler%4Operational.evtx",
+        "Ключевая информация": "106 (задача зарегистрирована), 140/141 (изменена/удалена), 200/201 (запуск/завершение действия). Дополняет Security 4698 и анализ XML-файлов задач.",
+        "Инструмент анализа": "EvtxECmd, Hayabusa, TaskSchedulerView",
+        "Пример применения в расследовании": "Event 200 показывает фактический запуск действия задачи (powershell -enc) — доказывает реальное срабатывание персистенции."
+    },
+    {
+        "Источник": "EVTX (события)",
+        "Тип информации": "Сеть / Exfiltration",
+        "Артефакт": "BITS-Client/Operational.evtx",
+        "Расположение": "C:\\Windows\\System32\\winevt\\Logs\\Microsoft-Windows-Bits-Client%4Operational.evtx",
+        "Ключевая информация": "3 (создана BITS-задача), 4 (завершена), 59/60 (передача началась/закончилась) — URL и локальный путь. Атакующие используют BITS как скрытый канал загрузки (bitsadmin/Start-BitsTransfer).",
+        "Инструмент анализа": "EvtxECmd, Hayabusa, bitsadmin /list, Get-BitsTransfer",
+        "Пример применения в расследовании": "Event 59 фиксирует BITS-загрузку payload.exe с http://evil[.]ru → LOLBin-доставка в обход прямых HTTP-загрузок."
+    },
+    {
+        "Источник": "Прочее",
+        "Тип информации": "Существование файлов",
+        "Артефакт": "Thumbcache (кэш миниатюр)",
+        "Расположение": "C:\\Users\\%USERNAME%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\thumbcache_*.db",
+        "Ключевая информация": "Миниатюры просмотренных в Проводнике изображений/документов. Сохраняются ДАЖЕ после удаления исходного файла — позволяют восстановить вид удалённых картинок и доказать их наличие.",
+        "Инструмент анализа": "Thumbcache Viewer, thumbs_viewer, Magnet AXIOM",
+        "Пример применения в расследовании": "Исходные фото удалены, но Thumbcache хранит миниатюры конфиденциальных чертежей → доказывает, что файлы открывались на этом хосте."
+    },
+    {
+        "Источник": "Прочее",
+        "Тип информации": "Выполнение программ / Сбой",
+        "Артефакт": "WER (Windows Error Reporting)",
+        "Расположение": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\nC:\\Users\\%USERNAME%\\AppData\\Local\\Microsoft\\Windows\\WER",
+        "Ключевая информация": "Отчёты о сбоях приложений: полный путь к упавшему процессу, версия, загруженные модули, время. Часто фиксирует малварь/инжекты, которые крашнулись, даже если файл уже удалён.",
+        "Инструмент анализа": "Любой текстовый редактор (Report.wer), WERFault анализ, Magnet AXIOM",
+        "Пример применения в расследовании": "WER Report.wer фиксирует сбой инжектированного modul.dll внутри explorer.exe с полным путём → след process injection, не попавший в другие логи."
+    },
+    {
+        "Источник": "Прочее",
+        "Тип информации": "Сеть / Lateral Movement",
+        "Артефакт": "RDP Bitmap Cache",
+        "Расположение": "C:\\Users\\%USERNAME%\\AppData\\Local\\Microsoft\\Terminal Server Client\\Cache\\bcache*.bmc / Cache*.bin",
+        "Ключевая информация": "Фрагменты (тайлы) экрана удалённой RDP-сессии на стороне КЛИЕНТА. Позволяют частично восстановить, ЧТО видел атакующий на целевом хосте через mstsc.",
+        "Инструмент анализа": "bmc-tools (ANSSI), RdpCacheStitcher, BMC-Tools + ImageMagick",
+        "Пример применения в расследовании": "Реконструкция bcache → видны фрагменты окна с командной строкой DC и набираемой командой net user — визуальное доказательство действий по RDP."
+    },
+    {
+        "Источник": "Прочее",
+        "Тип информации": "Сеть / Exfiltration",
+        "Артефакт": "Outlook OST / PST",
+        "Расположение": "C:\\Users\\%USERNAME%\\AppData\\Local\\Microsoft\\Outlook\\*.ost\n...\\Documents\\Outlook Files\\*.pst",
+        "Ключевая информация": "Локальная почтовая база: письма, вложения, контакты, календарь — включая удалённые на сервере элементы. Источник для расследования BEC, фишинга и утечки через почту.",
+        "Инструмент анализа": "Kernel OST Viewer, libpff (pffexport), Aid4Mail, Magnet AXIOM",
+        "Пример применения в расследовании": "В OST найдено исходящее письмо с вложением confidential.zip на внешний адрес → подтверждает канал утечки данных через корпоративную почту."
+    }
+]
