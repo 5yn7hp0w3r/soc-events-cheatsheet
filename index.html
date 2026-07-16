@@ -13,6 +13,7 @@
     --crit:#ff5d57; --high:#ff9f45; --med:#e8c14a; --low:#42c76a; --info:#4db8ff; --tool:#c08bff;
     --atk:#ff5d57; --atk-bg:rgba(255,93,87,.13); --def:#4db8ff; --def-bg:rgba(77,184,255,.13);
     --err:#ff8a5c; --err-bg:rgba(255,138,92,.13); --lt:#5ad1c8; --lt-bg:rgba(90,209,200,.13);
+    --sl:#ff7ac6; --sl-bg:rgba(255,122,198,.13);
     --code:#070a0f; --mono:'SFMono-Regular',ui-monospace,Consolas,'Liberation Mono',Menlo,monospace;
     --r:14px;
   }
@@ -115,6 +116,13 @@
   .src.Sysmon{color:#7fc7ff;border-color:rgba(77,184,255,.35)}
   .src.Error{color:var(--err);background:var(--err-bg);border-color:rgba(255,138,92,.45);font-weight:700}
   .src.LogonType{color:var(--lt);background:var(--lt-bg);border-color:rgba(90,209,200,.45);font-weight:700}
+  .src.Storyline{color:var(--sl);background:var(--sl-bg);border-color:rgba(255,122,198,.45);font-weight:700}
+  .eidlink{cursor:pointer;color:var(--accent);border-bottom:1px dashed rgba(77,184,255,.5);border-radius:2px;padding:0 1px}
+  .eidlink:hover{background:rgba(77,184,255,.18);color:#fff}
+  .slchip{cursor:pointer;font-size:11.5px;color:var(--sl);background:var(--sl-bg);border:1px solid rgba(255,122,198,.4);border-radius:7px;padding:2px 8px;transition:.12s}
+  .slchip:hover{background:rgba(255,122,198,.25);border-color:var(--sl)}
+  .slbtn{margin-top:9px;cursor:pointer;font-size:12px;color:var(--sl);background:var(--panel2);border:1px solid rgba(255,122,198,.4);border-radius:8px;padding:6px 11px;transition:.12s}
+  .slbtn:hover{border-color:var(--sl);color:#fff;background:rgba(255,122,198,.18)}
   .chip.active[data-val="Attack"]{background:linear-gradient(145deg,#e0403a,#b52e29);border-color:#e0403a;box-shadow:0 3px 14px rgba(255,93,87,.35)}
   .chip.active[data-val="Defense"]{background:linear-gradient(145deg,#2f81f7,#2564d6);border-color:#2f81f7;box-shadow:0 3px 14px rgba(47,129,247,.35)}
   .ctitle{font-size:15.5px;font-weight:650;color:var(--fg);line-height:1.35}
@@ -241,6 +249,21 @@
   // события из листа «Popular events» → отдельная категория «⭐ Популярные»
   var popularEids = {};
   (D['Popular events']||[]).forEach(function(r){ var e=v(r['Event ID']); if(e) popularEids[e]=1; });
+
+  // Storylines (цепочки атак) — сводные строки + карта Event ID -> цепочки
+  var storylines = [], eid2sl = {};
+  (function(){
+    var SL = D['Storylines']||[]; if(!SL.length) return;
+    var sk = Object.keys(SL[0])[0];
+    SL.forEach(function(r){
+      var num = String(r[sk]||'').trim(); if(!/^\d+$/.test(num)) return;
+      var chain = v(r['col_3']);
+      var eids = chain.match(/\b\d{3,5}\b/g) || [];
+      var sl = {num:num, name:v(r['col_2']), cat:v(r['col_1']), chain:chain, mitre:v(r['col_4']), eids:eids};
+      storylines.push(sl);
+      eids.forEach(function(e){ (eid2sl[e]=eid2sl[e]||[]); if(eid2sl[e].indexOf(sl)===-1) eid2sl[e].push(sl); });
+    });
+  })();
   function winFallback(cat){
     var c=(cat||'').toLowerCase();
     if(/defender|антивирус/.test(c)) return 'Windows Defender';
@@ -326,6 +349,11 @@
     records.push({src:'LogonType',id:'Type '+v(r['Тип']),title:v(r['Название']),cat:'Logon Type',groups:['Logon Type'],
       sev:'',desc:v(r['Описание']),ltsource:v(r['Типичный источник событий']),example:v(r['Пример'])});
   });
+  // Storylines (цепочки атак)
+  storylines.forEach(function(sl){
+    records.push({src:'Storyline',id:'Storyline '+sl.num,title:sl.name,cat:sl.cat,groups:[sl.cat||'Storyline'],
+      sev:'',desc:'Цепочка: '+sl.chain,mitre:sl.mitre,chain:sl.chain,chainEids:sl.eids});
+  });
 
   // ---- индексы ----
   var mitreRe=/T\d{4}(?:\.\d{3})?|TA\d{4}/g, mitreSet={};
@@ -340,7 +368,7 @@
   var SEVC={critical:'var(--crit)',high:'var(--high)',medium:'var(--med)',low:'var(--low)',info:'var(--info)'};
 
   // ---- pills / stats ----
-  var counts={Windows:0,Sysmon:0,Linux:0,Attack:0,Defense:0,Error:0,LogonType:0}; records.forEach(function(r){counts[r.src]++});
+  var counts={Windows:0,Sysmon:0,Linux:0,Attack:0,Defense:0,Error:0,LogonType:0,Storyline:0}; records.forEach(function(r){counts[r.src]++});
   document.getElementById('pills').innerHTML=
     '<span class="pill"><b>'+records.length+'</b> записей</span>'+
     '<span class="pill"><span class="dot" style="background:var(--info)"></span><b>'+counts.Windows+'</b> Windows Event ID</span>'+
@@ -350,6 +378,7 @@
     '<span class="pill"><span class="dot" style="background:var(--def)"></span><b>'+counts.Defense+'</b> инстр. защиты</span>'+
     '<span class="pill"><span class="dot" style="background:var(--err)"></span><b>'+counts.Error+'</b> Error-кодов</span>'+
     '<span class="pill"><span class="dot" style="background:var(--lt)"></span><b>'+counts.LogonType+'</b> Logon Types</span>'+
+    '<span class="pill"><span class="dot" style="background:var(--sl)"></span><b>'+counts.Storyline+'</b> цепочек атак</span>'+
     '<span class="pill"><span class="dot" style="background:var(--high)"></span><b>'+Object.keys(mitreSet).length+'</b> техник MITRE</span>';
 
   // ---- state ----
@@ -357,7 +386,7 @@
   var sevRu={critical:'Критич.',high:'Высокая',medium:'Средняя',low:'Низкая',info:'Инфо'};
 
   // источники с счётчиками
-  var srcDefs=[['','Все',records.length],['Windows','Windows',counts.Windows],['Sysmon','Sysmon',counts.Sysmon],['Linux','Linux',counts.Linux],['Attack','⚔️ Атака',counts.Attack],['Defense','🛡️ Защита',counts.Defense],['Error','❌ Error-коды',counts.Error],['LogonType','🔑 Logon Types',counts.LogonType]];
+  var srcDefs=[['','Все',records.length],['Windows','Windows',counts.Windows],['Sysmon','Sysmon',counts.Sysmon],['Linux','Linux',counts.Linux],['Attack','⚔️ Атака',counts.Attack],['Defense','🛡️ Защита',counts.Defense],['Error','❌ Error-коды',counts.Error],['LogonType','🔑 Logon Types',counts.LogonType],['Storyline','🧩 Цепочки атак',counts.Storyline]];
   var srcEl=document.getElementById('srcChips');
   srcDefs.forEach(function(c){
     var b=document.createElement('span'); b.className='chip'+(state.src===c[0]?' active':''); b.dataset.val=c[0];
@@ -444,6 +473,18 @@
       .map(function(x){return '<span class="ttag" data-t="'+esc(x)+'">'+esc(x)+'</span>';}).join('');
     if(!tags) return fld('','MITRE ATT&CK',val);
     return '<div class="field"><h4>MITRE ATT&CK</h4><div class="tags">'+tags+'</div></div>'; }
+  // Event ID внутри текста -> кликабельные (для корреляций и цепочек)
+  function linkifyEids(s){ return esc(s).replace(/\b(\d{3,5})\b/g,function(m){return '<span class="eidlink" data-eid="'+m+'">'+m+'</span>';}); }
+  function corrField(val){ if(!val)return''; return '<div class="field"><h4>Корреляции <span style="color:var(--fg3);text-transform:none;letter-spacing:0">(клик по ID → переход)</span></h4><div class="val corrlinks">'+linkifyEids(val)+'</div></div>'; }
+  function slForEvent(r){
+    if(r.src!=='Windows'&&r.src!=='Sysmon') return '';
+    var arr=eid2sl[r.id]||[]; if(!arr.length) return '';
+    var chips=arr.map(function(sl){return '<span class="slchip" data-num="'+esc(sl.num)+'">🧩 '+esc(sl.name)+'</span>';}).join('');
+    return '<div class="field"><h4>🧩 Участвует в цепочках атак</h4><div class="tags">'+chips+'</div></div>'; }
+  function slChainField(r){
+    if(r.src!=='Storyline') return '';
+    return '<div class="field"><h4>🧩 Цепочка атаки</h4><div class="val corrlinks">'+linkifyEids(r.chain||'')+'</div>'+
+      (r.chainEids&&r.chainEids.length?'<button class="slbtn" data-eids="'+esc(r.chainEids.join(','))+'">🔎 показать все события цепочки</button>':'')+'</div>'; }
 
   function card(r,i){
     var sev=sevKey(r.sev);
@@ -457,7 +498,8 @@
       '<div class="ctop"><div class="cgroups">'+gtags+'</div>'+
       '<svg class="exp" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></div></div>';
     var body='<div class="cbody">'+
-      (r.desc&&r.desc.length>130?fld('','Описание',r.desc):'')+
+      slChainField(r)+
+      (r.desc&&r.desc.length>130&&r.src!=='Storyline'?fld('','Описание',r.desc):'')+
       fld('','Подробности',r.details)+
       fld('ioc','⚠ Индикаторы атаки (IoC)',r.ioc)+
       fld('fp','✓ False Positive / легитимно',r.fp)+
@@ -477,10 +519,11 @@
       fld('','Пример',r.example)+
       code('SPL-шаблон',r.spl)+
       code('Проверка (CLI / journalctl)',r.cli)+
-      code('Корреляции',r.corr)+
+      corrField(r.corr)+
+      slForEvent(r)+
       (r.doc?'<div class="field"><h4>Документация</h4><a class="doc-link" href="'+esc(fixUrl(r.doc))+'" target="_blank" rel="noopener">'+esc(r.doc)+' ↗</a></div>':'')+
     '</div>';
-    var accent=r.src==='Attack'?'var(--atk)':(r.src==='Defense'?'var(--def)':(r.src==='Error'?'var(--err)':(r.src==='LogonType'?'var(--lt)':(sev?SEVC[sev]:'var(--border2)'))));
+    var accent=r.src==='Attack'?'var(--atk)':(r.src==='Defense'?'var(--def)':(r.src==='Error'?'var(--err)':(r.src==='LogonType'?'var(--lt)':(r.src==='Storyline'?'var(--sl)':(sev?SEVC[sev]:'var(--border2)')))));
     return '<div class="card'+(state.expand?' open':'')+'" style="--sevc:'+accent+'">'+head+body+'</div>';
   }
 
@@ -500,7 +543,7 @@
       }
       out.push(card(r,i)); shown++;
     });
-    var srcLbl={Windows:'Windows',Sysmon:'Sysmon',Linux:'Linux',Attack:'Атака',Defense:'Защита',Error:'Error-коды',LogonType:'Logon Types'};
+    var srcLbl={Windows:'Windows',Sysmon:'Sysmon',Linux:'Linux',Attack:'Атака',Defense:'Защита',Error:'Error-коды',LogonType:'Logon Types',Storyline:'Цепочки атак'};
     var active=[]; if(state.src)active.push(srcLbl[state.src]||state.src); if(state.cat)active.push(state.cat);
     if(state.sev.length)active.push('важность: '+state.sev.map(function(s){return sevRu[s]||s;}).join('/'));  if(state.mitre)active.push(state.mitre); if(state.q)active.push('«'+state.q+'»');
     meta.innerHTML='Найдено: <b>'+shown+'</b> из '+records.length+(active.length?' &nbsp;·&nbsp; фильтры: '+active.map(esc).join(', '):'');
@@ -508,7 +551,26 @@
       '<div class="empty"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg><div><b>Ничего не найдено.</b><br>Сбрось фильтры или измени запрос.</div></div>';
   }
 
+  // централизованная навигация (клик по Event ID / цепочке)
+  function goSearch(q, idOnlyFlag, src){
+    state.q=q; qinput.value=q;
+    state.idOnly=!!idOnlyFlag; if(idOnly) idOnly.checked=state.idOnly;
+    state.sev=[]; syncSevChips();
+    state.mitre=''; msel.value='';
+    if(src!==undefined) state.src=src;
+    state.cat='';
+    [].forEach.call(srcEl.children,function(x){x.classList.toggle('active',x.dataset.val===state.src);});
+    buildCats();
+    render(); window.scrollTo({top:0,behavior:'smooth'});
+  }
+
   grid.addEventListener('click',function(e){
+    var el=e.target.closest('.eidlink');
+    if(el){ e.stopPropagation(); goSearch(el.getAttribute('data-eid'), true, ''); return; }
+    var sc=e.target.closest('.slchip');
+    if(sc){ e.stopPropagation(); goSearch('storyline '+sc.getAttribute('data-num'), true, 'Storyline'); return; }
+    var sb=e.target.closest('.slbtn');
+    if(sb){ e.stopPropagation(); goSearch(sb.getAttribute('data-eids').split(',').join(', '), true, ''); return; }
     var cp=e.target.closest('.copy');
     if(cp){ e.stopPropagation(); var txt=cp.getAttribute('data-code');
       var ta=document.createElement('textarea'); ta.value=txt.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');

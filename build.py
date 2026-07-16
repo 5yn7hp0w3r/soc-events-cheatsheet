@@ -66,6 +66,9 @@ def main():
     defenders = clean_defenders(load("Инструменты_защитников.json"))
     data["Инструменты защитников"] = defenders
 
+    # 2b) storylines — чистая версия из standalone (в all.json колонки битые)
+    data["Storylines"] = load("Storylines.json")
+
     # 3) пишем data.js
     out_path = os.path.join(ROOT, "data.js")
     with open(out_path, "w", encoding="utf-8") as f:
