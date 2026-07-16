@@ -492,11 +492,12 @@
   function esc(s){return s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function fixUrl(u){u=(u||'').trim();return u&&!/^https?:\/\//i.test(u)?'https://'+u:u;}
   // разбор запроса: "4624, 4688" или "4624 4688 4625" -> список термов (OR); иначе фраза целиком
-  function parseTerms(q){ q=(q||'').trim(); if(!q) return [];
-    if(q.indexOf(',')!==-1) return q.split(',').map(function(s){return s.trim();}).filter(Boolean);
-    if(/^[\d\s]+$/.test(q)) return q.split(/\s+/).filter(Boolean);
-    return [q]; }
-  function hl(s){ var terms=parseTerms(state.q); if(!terms.length) return esc(s);
+  // запрос: "4624, 4688"/"4624 4688" -> OR по ID; свободный текст -> AND по словам
+  function parseQuery(q){ q=(q||'').trim(); if(!q) return {terms:[],or:true};
+    if(q.indexOf(',')!==-1) return {terms:q.split(',').map(function(s){return s.trim();}).filter(Boolean), or:true};
+    if(/^[\d\s]+$/.test(q)) return {terms:q.split(/\s+/).filter(Boolean), or:true};
+    return {terms:q.split(/\s+/).filter(Boolean), or:false}; }
+  function hl(s){ var terms=parseQuery(state.q).terms; if(!terms.length) return esc(s);
     var out=esc(s);
     terms.forEach(function(t){ var q=t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
       try{ out=out.replace(new RegExp('('+q+')','ig'),'<mark>$1</mark>'); }catch(e){} });
@@ -581,16 +582,17 @@
 
   var grid=document.getElementById('grid'), meta=document.getElementById('meta');
   function render(){
-    var out=[],shown=0,qterms=parseTerms(state.q);
+    var out=[],shown=0,qq=parseQuery(state.q);
     records.forEach(function(r,i){
       if(state.src&&r.src!==state.src)return;
       if(state.sev.length&&state.sev.indexOf(sevKey(r.sev))===-1)return;
       if(state.cat&&(r.groups||[]).indexOf(state.cat)===-1)return;
       if(state.mitre&&r._mitre.indexOf(state.mitre)===-1)return;
-      if(qterms.length){
+      if(qq.terms.length){
         var ok = state.idOnly
-          ? qterms.some(function(t){return r._idtok.indexOf(t)!==-1||(r.id||'').toLowerCase()===t;})
-          : qterms.some(function(t){return r._blob.indexOf(t)!==-1;});
+          ? qq.terms.some(function(t){return r._idtok.indexOf(t)!==-1||(r.id||'').toLowerCase()===t;})
+          : (qq.or ? qq.terms.some(function(t){return r._blob.indexOf(t)!==-1;})
+                   : qq.terms.every(function(t){return r._blob.indexOf(t)!==-1;}));
         if(!ok) return;
       }
       out.push(card(r,i)); shown++;

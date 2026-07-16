@@ -11,7 +11,7 @@
 ![Events](https://img.shields.io/badge/Event_ID-144-critical)
 ![Sheets](https://img.shields.io/badge/разделов-22-informational)
 ![Storylines](https://img.shields.io/badge/цепочек_атак-15-orange)
-![Tools](https://img.shields.io/badge/инструментов-250-green)
+![Tools](https://img.shields.io/badge/инструментов-264-green)
 ![Platform](https://img.shields.io/badge/Windows-Linux-lightgrey)
 ![MITRE](https://img.shields.io/badge/MITRE-ATT%26CK-red)
 
@@ -40,7 +40,7 @@
 - **15 storyline-цепочек** — типовые сценарии атак, разложенные по шагам и размеченные по MITRE ATT&CK (в детализации — 90+ шагов с SPL-логикой)
 - **43 события Linux** — auditd / journald / syslog с командами проверки через CLI
 - **45 форензик-артефактов Windows** — где искать следы, чем анализировать, пример применения
-- **250 инструментов** — 74 атакующих (с process names и Event ID) + 176 защитников (EDR/XDR, SIEM, DFIR, WAF, VM, AppSec + отечественные вендоры: Positive Technologies, SolidLab, Kaspersky, BI.ZONE, UserGate, InfoWatch, Солар…)
+- **264 инструмента** — 74 атакующих (с process names и Event ID) + 190 защитников (EDR/XDR, SIEM, NDR, DFIR, WAF, VM, AppSec, anti-DDoS, IdM + отечественные вендоры: Positive Technologies, SolidLab, Kaspersky, BI.ZONE, Солар, F6, InfoWatch, UserGate…)
 - **Справочники** — LogonType, NTSTATUS-коды ошибок (4625 и полный реестр из 64 кодов)
 
 ## 🗂️ Навигация по разделам
@@ -78,7 +78,7 @@
 | 17 | [🧩 Storylines](MD/17_Storylines.md) | 15 | Цепочки атак по MITRE ATT&CK / Kill Chain: brute-force, Kerberoasting, DCSync, lateral movement, ransomware… Сводка + пошаговая детализация с Event ID и IoC |
 | 18 | [🔬 Forensics WIN](MD/18_Forensics_WIN.md) | 45 | Артефакты: реестр (Run, ShimCache, AmCache), prefetch, `$MFT`, journal, LNK/Jump Lists. Расположение + инструмент + пример |
 | 21 | [⚔️ Инструменты атакующих](MD/21_Инструменты%20атакующих.md) | 74 | Evilginx, Cobalt Strike, Mimikatz, AdFind, RMM-abuse, AADInternals, web-shells… Процессы, MITRE TTP, Event ID, паттерны |
-| 20 | [🛡️ Инструменты защитников](MD/20_Инструменты%20защитников.md) | 166 | EDR/XDR, SIEM, NDR, forensics, TI + отечественные (Positive, Kaspersky, BI.ZONE, UserGate, Солар, InfoWatch…) |
+| 20 | [🛡️ Инструменты защитников](MD/20_Инструменты%20защитников.md) | 190 | EDR/XDR, SIEM, NDR, forensics, TI, anti-DDoS, IdM + отечественные (Positive, Kaspersky, BI.ZONE, Солар, F6, UserGate, InfoWatch…) |
 
 ### 🐧 Linux
 
