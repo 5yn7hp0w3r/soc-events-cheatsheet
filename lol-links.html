@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LOL Links — Living-off-the-Land справочники для SOC</title>
 <meta name="description" content="Полная подборка проектов Living-off-the-Land: LOLBAS, GTFOBins, LOLDrivers, LOLRMM, LOLESXi, LOLC2, LOLCreds и др. — индекс для SOC-аналитиков и threat hunters.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0d13">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <style>
   :root{
     --bg:#0a0d13; --bg-soft:#0f141c; --panel:#141a24; --panel2:#1a2130; --border:#242c3a; --border2:#303a4d;
@@ -209,6 +213,9 @@
   });
   render();
 })();
+</script>
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
 </script>
 </body>
 </html>

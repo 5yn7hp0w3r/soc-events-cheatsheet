@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOC Events Cheat Sheet — поиск по событиям Windows / Linux</title>
 <meta name="description" content="Интерактивный справочник событий Windows/Linux для SOC: поиск по Event ID, IoC, SPL-запросам, фильтры по категории, важности и MITRE ATT&CK.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0d13">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <style>
   :root{
     --bg:#0a0d13; --bg-soft:#0f141c; --panel:#141a24; --panel2:#1a2130; --border:#242c3a; --border2:#303a4d;
@@ -630,6 +634,9 @@
   var backtop=document.getElementById('backtop');
   backtop.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
   window.addEventListener('scroll',function(){ backtop.classList.toggle('show',window.scrollY>600); });
+
+  // PWA: офлайн-режим через service worker
+  if('serviceWorker' in navigator){ window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
 
   // старт: восстановить состояние из URL (для расшаренных ссылок)
   if(hashToState()) syncUIfromState();

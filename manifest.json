@@ -1,0 +1,14 @@
+{
+  "name": "SOC Events Cheat Sheet",
+  "short_name": "SOC Cheat",
+  "description": "Справочник событий Windows/Linux для SOC: поиск по Event ID, IoC, SPL, MITRE, цепочки атак, инструменты.",
+  "lang": "ru",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0a0d13",
+  "theme_color": "#0a0d13",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
