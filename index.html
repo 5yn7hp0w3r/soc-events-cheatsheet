@@ -516,7 +516,7 @@
   function parseQuery(q){ q=(q||'').trim(); var res={mode:'text',terms:[],or:false,counts:{}};
     if(!q) return res;
     var hasCounts=false;
-    q.replace(/(\d{2,5})\s*\(\s*(\d+)\s*\)/g,function(_,id,cnt){res.counts[id]=cnt;hasCounts=true;return '';});
+    q.replace(/\b(\d{1,5})\s*\(\s*(\d+)\s*\)/g,function(_,id,cnt){res.counts[id]=cnt;hasCounts=true;return '';});
     var cleaned=q.replace(/\(\s*\d+\s*\)/g,' ').trim();
     if(hasCounts||/^[\d,\s]+$/.test(cleaned)){ res.mode='id'; res.terms=cleaned.split(/[,\s]+/).filter(Boolean); return res; }
     if(q.indexOf(',')!==-1){ res.or=true; res.terms=q.split(',').map(function(s){return s.trim();}).filter(Boolean); }
@@ -581,12 +581,19 @@
     if(r.summary) h+=fld('ioc','🎯 Итоговая корреляция (когда бить тревогу)',r.summary);
     return h; }
 
+  // счётчик из запроса: по r.id (Windows «4624») или по числовому токену (Sysmon «Sysmon 15» → 15)
+  function countFor(r){
+    if(activeCounts[r.id]!==undefined) return activeCounts[r.id];
+    var t=r._idtok||[];
+    for(var i=0;i<t.length;i++){ if(activeCounts[t[i]]!==undefined) return activeCounts[t[i]]; }
+    return undefined;
+  }
   function card(r,i){
-    var sev=sevKey(r.sev);
+    var sev=sevKey(r.sev), cnt=countFor(r);
     var gtags=(r.groups||[]).filter(Boolean).map(function(g){return '<span class="gtag">'+esc(g)+'</span>';}).join('');
     var head='<div class="chead" data-i="'+i+'"><div class="ctop">'+
       (r.id?'<span class="eid">'+hl(r.id)+'</span>':'')+
-      (activeCounts[r.id]?'<span class="cnt-badge">📊 Количество событий: '+esc(activeCounts[r.id])+'</span>':'')+
+      (cnt!==undefined?'<span class="cnt-badge">📊 Количество событий: '+esc(cnt)+'</span>':'')+
       (sev?'<span class="sev" style="color:'+SEVC[sev]+';background:'+SEVC[sev].replace('var(','rgba(').replace(')',',0.12)')+';border:1px solid '+SEVC[sev]+'"><span class="sd" style="background:'+SEVC[sev]+'"></span>'+esc(r.sev)+'</span>':'')+
       '<span class="src '+r.src+'">'+r.src+'</span></div>'+
       (r.title?'<div class="ctitle">'+hl(r.title)+'</div>':'')+
@@ -644,7 +651,7 @@
       }
       matched.push(r);
     });
-    if(hasCounts) matched.sort(function(a,b){return (parseInt(activeCounts[b.id]||'0',10)||0)-(parseInt(activeCounts[a.id]||'0',10)||0);});
+    if(hasCounts) matched.sort(function(a,b){return (parseInt(countFor(b)||'0',10)||0)-(parseInt(countFor(a)||'0',10)||0);});
     var out=matched.map(function(r,idx){return card(r,idx);}), shown=matched.length;
     var srcLbl={Windows:'Windows',Sysmon:'Sysmon',Linux:'Linux',Attack:'Атака',Defense:'Защита',Error:'Error-коды',LogonType:'Logon Types',Storyline:'Цепочки атак'};
     var active=[]; if(state.src)active.push(srcLbl[state.src]||state.src); if(state.cat)active.push(state.cat);
