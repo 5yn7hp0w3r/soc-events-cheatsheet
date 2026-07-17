@@ -365,7 +365,7 @@
       groups:[linuxGroup(v(r['Категория']))],log:v(r['Источник / Лог']),sev:v(r['Важность']),freq:v(r['Частота']),
       desc:v(r['Описание']),ioc:v(r['Индикаторы атаки']),cli:v(r['Где проверить (CLI / journalctl)']),
       scen:v(r['Типичные сценарии']),mitre:v(r['MITRE ATT&CK']),corr:v(r['Корреляции']),fields:v(r['Ключевые поля']),
-      spl:v(r['SPL-шаблон']),doc:v(r['Документация'])});
+      spl:v(r['SPL-шаблон']),kql:v(r['KQL-шаблон']),kuma:v(r['KUMA-шаблон']),doc:v(r['Документация'])});
   });
   (D['Инструменты атакующих']||[]).forEach(function(r){
     if(!v(r['name'])) return;

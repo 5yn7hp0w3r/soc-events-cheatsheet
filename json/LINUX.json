@@ -14,7 +14,9 @@
     "SPL-шаблон": "index=linux sourcetype=\"Sysmon:Linux\" EventID=1\n  (CommandLine=\"*bash -i*\" OR CommandLine=\"*/tmp/*\" OR Image=\"*/dev/shm/*\")\n| table _time, host, User, Image, CommandLine, ParentImage, Hashes",
     "Ключевые поля": "EventID, Image, ParentImage, CommandLine, Hashes, User, ProcessGuid, DestinationIp/Port",
     "Документация": "https://github.com/Sysinternals/SysmonForLinux",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Process / Execution",
@@ -31,7 +33,9 @@
     "SPL-шаблон": "index=linux type=EXECVE\n  ((a0=\"*bash*\" AND a1=\"*-i*\") OR a0=\"*nc*\" OR (a0=\"*python*\" AND proctitle=\"*pty*\")\n   OR a0=\"*base64*\" OR a0=\"*/tmp/*\")\n| table _time, host, auid, uid, exe, a0, a1, ppid\n* Примечание: proctitle хранит hex-cmdline — надёжнее матчить по a0..aN или декодировать PROCTITLE (см. строку PROCTITLE)",
     "Ключевые поля": "syscall, pid, ppid, uid, auid, exe, comm, cwd, argc, a0..aN, success, key",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation",
@@ -48,7 +52,9 @@
     "SPL-шаблон": "index=linux type=USER_CMD\n  cmd IN (\"*vi *\", \"*vim *\", \"*find * -exec*\", \"*awk *system*\", \"*/bin/sh*\", \"*/bin/bash*\")\n| table _time, host, auid, acct, cwd, cmd",
     "Ключевые поля": "msg, cwd, cmd, terminal, res, UID->auid, AUID, exe (sudo)",
     "Документация": "https://www.sudo.ws/docs/man/sudoers.man/",
-    "Частота": "Высокая"
+    "Частота": "Высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Управление учётками",
@@ -65,7 +71,9 @@
     "SPL-шаблон": "index=linux type IN (ADD_USER, DEL_USER, USER_MGMT)\n| table _time, host, type, auid, acct, id, exe, res",
     "Ключевые поля": "id (new uid), acct, auid, exe (useradd/userdel), res",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Управление учётками",
@@ -82,7 +90,9 @@
     "SPL-шаблон": "index=linux type IN (GRP_MGMT, ADD_GROUP)\n  grp IN (\"sudo\",\"wheel\",\"docker\",\"lxd\",\"disk\",\"shadow\",\"adm\")\n| table _time, host, auid, acct, grp, exe",
     "Ключевые поля": "grp, id (gid), acct, auid, exe (groupadd/usermod -aG), res",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence",
@@ -99,7 +109,9 @@
     "SPL-шаблон": "index=linux type=PATH key IN (\"cron\",\"systemd\",\"shell_profile\")\n  nametype IN (\"CREATE\",\"NORMAL\")\n  NOT exe IN (\"/usr/sbin/crond\",\"/usr/bin/systemctl\")\n| table _time, host, auid, exe, name, nametype",
     "Ключевые поля": "name (путь), syscall (rename/open), exe, auid, key=cron/systemd",
     "Документация": "https://man7.org/linux/man-pages/man8/crond.8.html",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Kernel",
@@ -116,7 +128,9 @@
     "SPL-шаблон": "index=linux type=SYSCALL syscall IN (175,313,176)\n| table _time, host, auid, exe, comm, key",
     "Ключевые поля": "syscall (175/313), exe, name (путь к .ko из PATH), comm (insmod/modprobe)",
     "Документация": "https://man7.org/linux/man-pages/man2/init_module.2.html",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Defense Evasion",
@@ -133,7 +147,9 @@
     "SPL-шаблон": "index=linux type IN (DAEMON_END, DAEMON_ABORT, CONFIG_CHANGE)\n| table _time, host, type, auid, op, res",
     "Ключевые поля": "type, auid, ses, res, op",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation",
@@ -150,7 +166,9 @@
     "SPL-шаблон": "index=linux type=SYSCALL syscall IN (90,268,452) success=yes\n| where like(name,\"/tmp/%\") OR like(name,\"/home/%\") OR like(name,\"/dev/shm/%\")\n| table _time, host, auid, exe, name, mode",
     "Ключевые поля": "syscall, exe, name, mode, key=suid_change",
     "Документация": "https://man7.org/linux/man-pages/man7/capabilities.7.html",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Docker",
@@ -167,7 +185,9 @@
     "SPL-шаблон": "index=linux key=docker_sock\n  NOT exe IN (\"/usr/bin/docker\",\"/usr/bin/dockerd\",\"/usr/bin/containerd*\")\n| stats count values(exe) AS exe by host, auid\n| where count>0",
     "Ключевые поля": "name=/var/run/docker.sock, exe, auid, syscall (open/connect), key=docker_sock",
     "Документация": "https://docs.docker.com/engine/security/",
-    "Частота": "Средняя"
+    "Частота": "Средняя",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Docker",
@@ -184,7 +204,9 @@
     "SPL-шаблон": "index=linux type=EXECVE\n  (proctitle=\"*docker exec*\" OR proctitle=\"*docker run*--privileged*\"\n   OR proctitle=\"*nsenter*--target*1*\" OR exe=\"*/runc\")\n| table _time, host, auid, exe, proctitle, ppid",
     "Ключевые поля": "exe (docker/runc/nsenter), proctitle, ppid\nПрим.: container_id в auditd НЕТ — это поле из логов dockerd/containerd (journald)",
     "Документация": "https://docs.docker.com/reference/cli/docker/container/exec/",
-    "Частота": "Высокая"
+    "Частота": "Высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Process / Execution",
@@ -201,7 +223,9 @@
     "SPL-шаблон": "index=linux type=EXECVE exe IN (\"/usr/bin/python\",\"/usr/bin/python3\")\n  (proctitle=\"*pty.spawn*\" OR proctitle=\"*socket.socket*\" OR proctitle=\"*subprocess*\"\n   OR proctitle=\"*http.server*\" OR proctitle=\"*SimpleHTTPServer*\"\n   OR proctitle=\"*base64*decode*\" OR proctitle=\"*urllib.request*\")\n| table _time, host, auid, ppid, proctitle",
     "Ключевые поля": "exe (/usr/bin/python*), proctitle, argc, a0..aN, ppid, auid",
     "Документация": "https://gtfobins.github.io/gtfobins/python/",
-    "Частота": "Высокая"
+    "Частота": "Высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Аутентификация",
@@ -218,7 +242,9 @@
     "SPL-шаблон": "index=linux type=USER_LOGIN\n| stats count by host, acct, addr, res\n| where res=\"failed\" AND count>5",
     "Ключевые поля": "acct, auid, addr, hostname, terminal, res",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Аутентификация",
@@ -235,7 +261,9 @@
     "SPL-шаблон": "index=linux type=USER_AUTH res=failed\n| stats count by host, acct, exe, addr\n| where count>10",
     "Ключевые поля": "acct, op, exe (sshd/login/sudo), res, addr",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "SSH",
@@ -252,7 +280,9 @@
     "SPL-шаблон": "index=linux source=\"*/auth.log\" OR source=\"*/secure\"\n  \"Accepted publickey\" OR \"Accepted password\"\n| rex \"Accepted (?<auth_method>\\S+) for (?<user>\\S+) from (?<src_ip>\\S+) port (?<src_port>\\d+)\"\n| stats count by host, user, src_ip, auth_method",
     "Ключевые поля": "user, src_ip, src_port, auth_method, key_fingerprint",
     "Документация": "https://man.openbsd.org/sshd",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "SSH",
@@ -269,7 +299,9 @@
     "SPL-шаблон": "index=linux (\"Failed password\" OR \"Invalid user\") sourcetype=\"linux_secure\"\n| rex \"(?:Failed password for |Invalid user )(?:invalid user )?(?<user>\\S+) from (?<src_ip>\\S+)\"\n| stats count dc(user) AS users by src_ip\n| where count>10",
     "Ключевые поля": "user, src_ip, src_port, auth_method, invalid_user_flag",
     "Документация": "https://www.openssh.com/manual.html",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Process / Execution",
@@ -286,7 +318,9 @@
     "SPL-шаблон": "index=linux type=PROCTITLE\n| eval cmd=hex2ascii(proctitle)\n| where match(cmd,\"(?i)base64|bash -c|/dev/tcp|/dev/udp\")\n| table _time, host, auid, cmd",
     "Ключевые поля": "proctitle (hex)",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "File System",
@@ -303,7 +337,9 @@
     "SPL-шаблон": "index=linux type=PATH key IN (\"identity\",\"pam\",\"sshd\",\"sudoers\")\n  nametype IN (\"CREATE\",\"NORMAL\",\"DELETE\")\n| table _time, host, auid, name, nametype, key",
     "Ключевые поля": "name, nametype, inode, mode, ouid, ogid, key",
     "Документация": "https://man7.org/linux/man-pages/man8/auditctl.8.html",
-    "Частота": "Высокая"
+    "Частота": "Высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Network",
@@ -320,7 +356,9 @@
     "SPL-шаблон": "index=linux type=SOCKADDR syscall=connect\n* Декод hex saddr в IP (проще, чем кажется):\n* IPv4: family=0200 + port (2 байта) + IP (4 байта hex)\n* Пример: 02000050 7F000001 → 127.0.0.1:80\n| rex field=saddr \"^0200(?<port_hex>[0-9A-F]{4})(?<ip_hex>[0-9A-F]{8})\"\n| eval port=tonumber(port_hex,16)\n| eval ip=printf(\"%d.%d.%d.%d\",\n    tonumber(substr(ip_hex,1,2),16),\n    tonumber(substr(ip_hex,3,2),16),\n    tonumber(substr(ip_hex,5,2),16),\n    tonumber(substr(ip_hex,7,2),16))\n| where NOT cidrmatch(\"10.0.0.0/8\",ip)\n  AND NOT cidrmatch(\"192.168.0.0/16\",ip)\n  AND NOT cidrmatch(\"172.16.0.0/12\",ip)\n| table _time, host, auid, exe, ip, port",
     "Ключевые поля": "saddr (hex), syscall, exe, auid, success",
     "Документация": "https://man7.org/linux/man-pages/man7/socket.7.html",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "MAC / SELinux",
@@ -337,7 +375,9 @@
     "SPL-шаблон": "index=linux type=MAC_STATUS enforcing=0\n| table _time, host, auid, op, enforcing",
     "Ключевые поля": "scontext, tcontext, tclass, perm (avc); enforcing, op (mac_status)",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Средняя"
+    "Частота": "Средняя",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Network",
@@ -354,7 +394,9 @@
     "SPL-шаблон": "index=linux type=NETFILTER_CFG\n| table _time, host, auid, table, family",
     "Ключевые поля": "table, family, entries, op",
     "Документация": "https://man7.org/linux/man-pages/man8/iptables.8.html",
-    "Частота": "Средняя"
+    "Частота": "Средняя",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation",
@@ -371,7 +413,9 @@
     "SPL-шаблон": "index=linux type=USER_ROLE_CHANGE new-role=\"sysadm_r\"\n| table _time, host, auid, acct, new-role",
     "Ключевые поля": "old-role, new-role, acct, auid",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation",
@@ -388,7 +432,9 @@
     "SPL-шаблон": "index=linux type=USER_CHAUTHTOK acct=\"root\"\n| table _time, host, auid, acct, res",
     "Ключевые поля": "acct, auid, exe, res, op",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Anomaly",
@@ -405,7 +451,9 @@
     "SPL-шаблон": "index=linux type IN (ANOM_PROMISCUOUS, ANOM_ABEND)\n| stats count by host, type, exe, comm",
     "Ключевые поля": "type, exe, comm, sig, pid, auid",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Python / Supply chain",
@@ -422,7 +470,9 @@
     "SPL-шаблон": "index=linux type=EXECVE\n  (proctitle=\"*pip install*\" OR proctitle=\"*pip3 install*\" OR proctitle=\"*python*-m pip install*\")\n  (proctitle=\"*--index-url*\" OR proctitle=\"*git+*\" OR proctitle=\"*--trusted-host*\"\n   OR proctitle=\"*impacket*\" OR proctitle=\"*pwntools*\" OR proctitle=\"*pycryptodome*\")\n| table _time, host, auid, ppid, proctitle",
     "Ключевые поля": "exe, proctitle (pip install ...), ppid, cwd",
     "Документация": "https://pip.pypa.io/en/stable/cli/pip_install/",
-    "Частота": "Средняя"
+    "Частота": "Средняя",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Аутентификация",
@@ -439,7 +489,9 @@
     "SPL-шаблон": "index=linux type=USER_ACCT res=failed\n| stats count by host, acct, exe",
     "Ключевые поля": "acct, exe, op (PAM:accounting), res",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Аутентификация",
@@ -456,7 +508,9 @@
     "SPL-шаблон": "index=linux type=CRED_ACQ\n| stats count by host, acct, exe, addr",
     "Ключевые поля": "acct, exe, addr, op",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Высокая"
+    "Частота": "Высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "SSH",
@@ -473,7 +527,9 @@
     "SPL-шаблон": "index=linux type=CRYPTO_KEY_USER\n| stats dc(addr) AS sources by host, fp\n| where sources>50",
     "Ключевые поля": "fp, addr, hostname, op, res",
     "Документация": "https://access.redhat.com/articles/4409591",
-    "Частота": "Очень высокая"
+    "Частота": "Очень высокая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence",
@@ -490,7 +546,9 @@
     "SPL-шаблон": "index=linux key=profile_change\n| stats count by host, name, uid\n| where uid!=0",
     "Ключевые поля": "name, uid, auid, key, nametype",
     "Документация": "https://attack.mitre.org/techniques/T1546/004/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence",
@@ -507,7 +565,9 @@
     "SPL-шаблон": "index=linux key=ssh_keys\n| stats count by host, name, uid, auid",
     "Ключевые поля": "name, uid, auid, key, nametype",
     "Документация": "https://attack.mitre.org/techniques/T1098/004/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence",
@@ -524,7 +584,9 @@
     "SPL-шаблон": "index=linux (key=systemd_unit OR type=SERVICE_START)\n| stats count by host, unit, auid",
     "Ключевые поля": "unit, name, auid, exe, key",
     "Документация": "https://attack.mitre.org/techniques/T1053/006/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence",
@@ -541,7 +603,9 @@
     "SPL-шаблон": "index=linux key=pam_change\n| stats count by host, name, auid, key",
     "Ключевые поля": "name, auid, key, nametype",
     "Документация": "https://attack.mitre.org/techniques/T1556/003/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence",
@@ -558,7 +622,9 @@
     "SPL-шаблон": "index=linux key=motd_change\n| stats count by host, name, auid",
     "Ключевые поля": "name, auid, key, nametype",
     "Документация": "https://attack.mitre.org/techniques/T1546/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Defense Evasion",
@@ -575,7 +641,9 @@
     "SPL-шаблон": "index=linux type=EXECVE (cmd=*truncate* OR cmd=*shred* OR cmd=*\\\"history -c\\\"*)\n| stats count by host, auid",
     "Ключевые поля": "exe, a0..a3, auid, key",
     "Документация": "https://attack.mitre.org/techniques/T1070/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Defense Evasion",
@@ -592,7 +660,9 @@
     "SPL-шаблон": "index=linux key=preload OR (type=EXECVE cmd=*LD_PRELOAD*)\n| stats count by host, auid, exe",
     "Ключевые поля": "name, exe, auid, key",
     "Документация": "https://attack.mitre.org/techniques/T1574/006/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Defense Evasion",
@@ -609,7 +679,9 @@
     "SPL-шаблон": "index=linux type=EXECVE cmd=*chattr*\n| stats count by host, auid, cmd",
     "Ключевые поля": "exe, a0..a3, auid",
     "Документация": "https://attack.mitre.org/techniques/T1222/002/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Defense Evasion",
@@ -626,7 +698,9 @@
     "SPL-шаблон": "index=linux type=*module* OR key=kernel_module\n| stats count by host, exe, auid",
     "Ключевые поля": "name, exe, auid, syscall",
     "Документация": "https://attack.mitre.org/techniques/T1014/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation",
@@ -643,7 +717,9 @@
     "SPL-шаблон": "index=linux type=EXECVE uid!=0 euid=0\n| stats count by host, exe, auid",
     "Ключевые поля": "exe, uid, euid, auid, a0..a3",
     "Документация": "https://gtfobins.github.io/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation",
@@ -660,7 +736,9 @@
     "SPL-шаблон": "index=linux type=SYSCALL syscall=ptrace\n| stats count by host, exe, auid, a0",
     "Ключевые поля": "syscall, exe, auid, a0 (request), pid, ppid",
     "Документация": "https://attack.mitre.org/techniques/T1055/008/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Execution / Evasion",
@@ -677,7 +755,9 @@
     "SPL-шаблон": "index=linux type=SYSCALL syscall=bpf\n| stats count by host, exe, auid",
     "Ключевые поля": "syscall, exe, auid, a0 (cmd)",
     "Документация": "https://attack.mitre.org/techniques/T1205/002/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Command & Control",
@@ -694,7 +774,9 @@
     "SPL-шаблон": "index=linux type=EXECVE (cmd=*wget* OR cmd=*curl*) (cmd=*/tmp* OR cmd=*/dev/shm*)\n| stats count by host, auid, cmd",
     "Ключевые поля": "exe, a0..a3, auid, cwd",
     "Документация": "https://attack.mitre.org/techniques/T1105/",
-    "Частота": "Средняя"
+    "Частота": "Средняя",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Credential Access",
@@ -711,7 +793,9 @@
     "SPL-шаблон": "index=linux key=shadow_access\n| stats count by host, exe, auid, comm",
     "Ключевые поля": "name, exe, auid, comm, key",
     "Документация": "https://attack.mitre.org/techniques/T1003/008/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceLogonEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where AccountName has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation",
@@ -728,7 +812,9 @@
     "SPL-шаблон": "index=linux type=EXECVE (cmd=*nsenter* OR cmd=*unshare*)\n| stats count by host, auid, cmd",
     "Ключевые поля": "exe, a0..a3, auid, syscall",
     "Документация": "https://attack.mitre.org/techniques/T1611/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Cloud / Credential Access",
@@ -745,7 +831,9 @@
     "SPL-шаблон": "index=linux (dest_ip=169.254.169.254 OR cmdline=*169.254.169.254*)\n| table _time, host, user, exe, cmdline",
     "Ключевые поля": "exe, cmdline, dest_ip, uid, auid",
     "Документация": "attack.mitre.org/techniques/T1552/005/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Command & Control",
@@ -762,7 +850,9 @@
     "SPL-шаблон": "index=linux type=EXECVE\n ((a0=*bash* AND cmdline=*/dev/tcp/*) OR cmdline=*nc*-e* OR (a0=*socat* AND cmdline=*EXEC*))\n| table _time, host, auid, exe, cmdline",
     "Ключевые поля": "exe, a0..aN, cmdline, ppid, auid",
     "Документация": "attack.mitre.org/techniques/T1059/004/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Defense Evasion / Execution",
@@ -779,7 +869,9 @@
     "SPL-шаблон": "index=linux (syscall=memfd_create OR (syscall=execveat AND cmdline=*/proc/self/fd/*) OR exe=*memfd:*)\n| table _time, host, exe, cmdline, ppid",
     "Ключевые поля": "syscall, exe, cmdline, ppid, auid",
     "Документация": "attack.mitre.org/techniques/T1620/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Credential Access",
@@ -796,7 +888,9 @@
     "SPL-шаблон": "index=linux (key=credtheft OR path IN (*/.ssh/id_*, */.aws/credentials, */.kube/config))\n| table _time, host, auid, exe, path",
     "Ключевые поля": "path, exe, uid, auid, key",
     "Документация": "attack.mitre.org/techniques/T1552/004/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation / Persistence",
@@ -813,7 +907,9 @@
     "SPL-шаблон": "index=linux key=sudoers\n| table _time, host, auid, exe, path",
     "Ключевые поля": "path, auid, exe, key",
     "Документация": "attack.mitre.org/techniques/T1548/003/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence / Command & Control",
@@ -830,7 +926,9 @@
     "SPL-шаблон": "index=linux (syscall=listen OR cmdline=*-lvp* OR cmdline=*LISTEN*)\n| table _time, host, exe, cmdline, auid",
     "Ключевые поля": "exe, cmdline, syscall, auid",
     "Документация": "attack.mitre.org/techniques/T1205/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Privilege Escalation",
@@ -847,7 +945,9 @@
     "SPL-шаблон": "index=linux type=EXECVE (cmdline=*pkexec* OR cmdline=*sudoedit*)\n| table _time, host, auid, uid, exe, cmdline",
     "Ключевые поля": "exe, cmdline, uid, auid, ppid",
     "Документация": "attack.mitre.org/techniques/T1068/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Defense Evasion",
@@ -864,7 +964,9 @@
     "SPL-шаблон": "index=linux type=EXECVE cmdline=*touch* (cmdline=*-t* OR cmdline=*-r*)\n| table _time, host, auid, cmdline",
     "Ключевые поля": "cmdline, auid, exe",
     "Документация": "attack.mitre.org/techniques/T1070/006/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Initial Access / Execution",
@@ -881,7 +983,9 @@
     "SPL-шаблон": "index=linux type=EXECVE ppid_exe IN (*apache2, *nginx, *php-fpm) (exe=*/sh OR exe=*/bash OR exe=*python*)\n| table _time, host, ppid, exe, cmdline",
     "Ключевые поля": "ppid, exe, cmdline, uid",
     "Документация": "attack.mitre.org/techniques/T1505/003/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Defense Evasion",
@@ -898,7 +1002,9 @@
     "SPL-шаблон": "index=linux (key=logintamper OR path IN (/var/log/wtmp,/var/log/btmp,/var/log/lastlog))\n| table _time, host, auid, exe, path",
     "Ключевые поля": "path, exe, auid, key",
     "Документация": "attack.mitre.org/techniques/T1070/002/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence / Privilege Escalation",
@@ -915,7 +1021,9 @@
     "SPL-шаблон": "index=linux (key=passwd OR (type=EXECVE cmdline=*useradd* cmdline=*-u 0*))\n| table _time, host, auid, cmdline, path",
     "Ключевые поля": "path, cmdline, auid",
     "Документация": "attack.mitre.org/techniques/T1136/001/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Persistence",
@@ -932,7 +1040,9 @@
     "SPL-шаблон": "index=linux (key=persist OR path IN (*/udev/rules.d/*, */system-generators/*))\n| table _time, host, auid, exe, path",
     "Ключевые поля": "path, exe, auid, key",
     "Документация": "attack.mitre.org/techniques/T1547/",
-    "Частота": "Очень низкая"
+    "Частота": "Очень низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceFileEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where FolderPath has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Supply chain / Execution",
@@ -949,7 +1059,9 @@
     "SPL-шаблон": "index=linux ((type=EXECVE (exe=*preinst OR exe=*postinst)) OR (source=*dpkg.log* action=install))\n| table _time, host, exe, cmdline",
     "Ключевые поля": "exe, cmdline, package, uid",
     "Документация": "attack.mitre.org/techniques/T1195/002/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceProcessEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where ProcessCommandLine has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   },
   {
     "Категория": "Command & Control",
@@ -966,6 +1078,8 @@
     "SPL-шаблон": "index=linux sourcetype=dns\n| eval sublen=len(query)\n| where sublen>50 OR match(query,\"[a-f0-9]{30,}\")\n| stats count by host, query_domain",
     "Ключевые поля": "query, query_domain, process, count",
     "Документация": "attack.mitre.org/techniques/T1071/004/",
-    "Частота": "Низкая"
+    "Частота": "Низкая",
+    "KQL-шаблон": "// Linux в Sentinel: Defender for Endpoint (Device*Events) или агент AMA (таблица Syslog)\nDeviceNetworkEvents\n// цель (опц.): | where DeviceName == \"ВАШ_ХОСТ\"\n// признак из «Индикаторов атаки»: | where RemoteIP has \"<признак>\"\n// либо Syslog-инжест: Syslog | where SyslogMessage has \"<признак>\"",
+    "KUMA-шаблон": "SELECT * FROM events\n-- Linux: сузьте по цели и признаку, напр.:\n--   WHERE DeviceHostName = 'ВАШ_ХОСТ' AND Message LIKE '%<признак>%'\nORDER BY Timestamp DESC\nLIMIT 1000"
   }
 ]
