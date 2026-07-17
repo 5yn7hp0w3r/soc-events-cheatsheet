@@ -69,6 +69,24 @@ def main():
     # 2b) storylines — чистая версия из standalone (в all.json колонки битые)
     data["Storylines"] = load("Storylines.json")
 
+    # 2c) остальные листы — источник правды это standalone json/*.json
+    #     (иначе правки в json/WinEvents_ALL.json и т.п. не доходят до сайта)
+    SHEETS = {
+        "Info.json": "Info",
+        "1Logon.json": "1)Logon", "2Management.json": "2)Management",
+        "3ProcessTasks.json": "3)Process&Tasks", "4Audit-access.json": "4)Audit-access",
+        "5Discovery-powershell.json": "5)Discovery-powershell", "6System-Network.json": "6)System-Network",
+        "7RDP.json": "7)RDP", "8Sysmon.json": "8)Sysmon",
+        "9Active-Directory.json": "9)Active-Directory", "10Windows-Defender.json": "10)Windows-Defender",
+        "WinEvents_ALL.json": "WinEvents_ALL", "Popular_events.json": "Popular events",
+        "Logon_types.json": "Logon types", "Error_4625.json": "Error_4625", "Error_ALL.json": "Error_ALL",
+        "Forensics_WIN.json": "Forensics_WIN", "LINUX.json": "LINUX",
+        "Описание_колонок.json": "Описание колонок",
+    }
+    for fname, key in SHEETS.items():
+        if os.path.exists(os.path.join(JSON_DIR, fname)):
+            data[key] = load(fname)
+
     # 3) пишем data.js
     out_path = os.path.join(ROOT, "data.js")
     with open(out_path, "w", encoding="utf-8") as f:
