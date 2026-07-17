@@ -14,7 +14,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-1",
     "SPL-шаблон": "index=sysmon source=\"WinEventLog:Microsoft-Windows-Sysmon/Operational\" EventCode=1 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  (Image=\"*\\\\powershell.exe\" OR Image=\"*\\\\cmd.exe\" OR Image=\"*\\\\wmic.exe\" OR Image=\"*\\\\rundll32.exe\" OR Image=\"*\\\\mshta.exe\")\n| eval susp=if(match(CommandLine,\"(?i)(-enc|frombase64|downloadstring|iex)\"),1,0)\n| where susp=1",
-    "Корреляции": "Sysmon 5 (process terminated)\n4688 (Security аналог)\nSysmon 3 (network connection от процесса)\nSysmon 7 (DLL loaded)"
+    "Корреляции": "Sysmon 5 (process terminated)\n4688 (Security аналог)\nSysmon 3 (network connection от процесса)\nSysmon 7 (DLL loaded)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 1\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Файловая система",
@@ -31,7 +32,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-2",
     "SPL-шаблон": "index=sysmon EventCode=2 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT Image IN (\"*\\\\setup.exe\",\"*\\\\msiexec.exe\")\n| table _time, host, Image, TargetFilename, PreviousCreationUtcTime, CurrentCreationUtcTime",
-    "Корреляции": "Sysmon 11 (file created)\nSysmon 23 (file deleted)\n4663 (Security file access)"
+    "Корреляции": "Sysmon 11 (file created)\nSysmon 23 (file deleted)\n4663 (Security file access)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 2\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Сеть",
@@ -48,7 +50,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-3",
     "SPL-шаблон": "index=sysmon EventCode=3 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ``` \n  DestinationPort IN (4444,8080,8443,1080,9001,53)\n  NOT Image=\"*\\\\svchost.exe\"\n| stats count by Image, DestinationIp, DestinationPort, host",
-    "Корреляции": "Sysmon 22 (DNS query от того же процесса)\n5156/5157 (Security WFP)\nSysmon 1 (создание процесса)"
+    "Корреляции": "Sysmon 22 (DNS query от того же процесса)\n5156/5157 (Security WFP)\nSysmon 1 (создание процесса)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 3\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Система",
@@ -65,7 +68,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-4",
     "SPL-шаблон": "index=sysmon EventCode=4 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, State, Version, SchemaVersion",
-    "Корреляции": "Sysmon 255 (errors)\nSysmon 16 (config changed)\n7045/4697 (служба Sysmon переустановлена)"
+    "Корреляции": "Sysmon 255 (errors)\nSysmon 16 (config changed)\n7045/4697 (служба Sysmon переустановлена)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 4\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Процессы",
@@ -82,7 +86,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-5",
     "SPL-шаблон": "index=sysmon EventCode=5 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Image IN (\"*\\\\MsMpEng.exe\",\"*\\\\Sysmon*.exe\",\"*\\\\EDR*.exe\")\n| table _time, host, Image, ProcessId, User",
-    "Корреляции": "Sysmon 1 (создание — пара по ProcessId)\n4689 (Security)\n4609 (Windows shutdown)"
+    "Корреляции": "Sysmon 1 (создание — пара по ProcessId)\n4689 (Security)\n4609 (Windows shutdown)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 5\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Драйверы",
@@ -99,7 +104,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-6",
     "SPL-шаблон": "index=sysmon EventCode=6 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Signed=false\n| table _time, host, ImageLoaded, Hashes, Signature",
-    "Корреляции": "Sysmon 7 (DLL loaded)\n4697/7045 (driver service install)\nSysmon 1 (процесс, загрузивший драйвер)"
+    "Корреляции": "Sysmon 7 (DLL loaded)\n4697/7045 (driver service install)\nSysmon 1 (процесс, загрузивший драйвер)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 6\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Модули",
@@ -116,7 +122,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-7",
     "SPL-шаблон": "index=sysmon EventCode=7 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Image IN (\"*\\\\lsass.exe\",\"*\\\\winlogon.exe\",\"*\\\\svchost.exe\")\n  Signed=false\n| stats count by Image, ImageLoaded, Signed",
-    "Корреляции": "Sysmon 1 (создание процесса)\nSysmon 10 (process access)\nSysmon 8 (remote thread)"
+    "Корреляции": "Sysmon 1 (создание процесса)\nSysmon 10 (process access)\nSysmon 8 (remote thread)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 7\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Потоки",
@@ -133,7 +140,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-8",
     "SPL-шаблон": "index=sysmon EventCode=8 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetImage IN (\"*\\\\lsass.exe\",\"*\\\\winlogon.exe\",\"*\\\\explorer.exe\")\n| table _time, host, SourceImage, TargetImage, StartAddress, StartModule",
-    "Корреляции": "Sysmon 10 (process accessed)\nSysmon 7 (DLL loaded в target)\n4656 (handle request к lsass)"
+    "Корреляции": "Sysmon 10 (process accessed)\nSysmon 7 (DLL loaded в target)\n4656 (handle request к lsass)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 8\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Доступ к диску",
@@ -150,7 +158,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-9",
     "SPL-шаблон": "index=sysmon EventCode=9 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT Image IN (\"*\\\\System\",\"*\\\\defender*\")\n| table _time, host, Image, Device, User",
-    "Корреляции": "Sysmon 11 (file created из чтения)\n4663 (file access)\nSysmon 1 (процесс)"
+    "Корреляции": "Sysmon 11 (file created из чтения)\n4663 (file access)\nSysmon 1 (процесс)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 9\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Доступ к объектам",
@@ -167,7 +176,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-10",
     "SPL-шаблон": "index=sysmon EventCode=10 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetImage=\"*\\\\lsass.exe\"\n  GrantedAccess IN (\"0x1010\",\"0x1410\",\"0x1438\",\"0x143a\",\"0x1fffff\")\n| table _time, host, SourceImage, TargetImage, GrantedAccess, CallTrace",
-    "Корреляции": "Sysmon 8 (remote thread в lsass)\n4656/4663 (Security)\n4674 (use SeDebugPrivilege)"
+    "Корреляции": "Sysmon 8 (remote thread в lsass)\n4656/4663 (Security)\n4674 (use SeDebugPrivilege)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 10\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Файловая система",
@@ -184,7 +194,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-11",
     "SPL-шаблон": "index=sysmon EventCode=11 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetFilename IN (\"*\\\\Temp\\\\*.exe\",\"*\\\\AppData\\\\*.exe\",\"*\\\\Users\\\\Public\\\\*\")\n| table _time, host, Image, TargetFilename, User",
-    "Корреляции": "Sysmon 1 (запуск созданного файла)\nSysmon 29 (executable created)\n4663 (file access)"
+    "Корреляции": "Sysmon 1 (запуск созданного файла)\nSysmon 29 (executable created)\n4663 (file access)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 11\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Реестр",
@@ -201,7 +212,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-12",
     "SPL-шаблон": "index=sysmon EventCode=12 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetObject IN (\"*\\\\Run\\\\*\",\"*\\\\RunOnce\\\\*\",\"*\\\\Image File Execution Options\\\\*\",\"*\\\\AppInit_DLLs*\")\n| table _time, host, Image, TargetObject, EventType",
-    "Корреляции": "Sysmon 13 (registry value set)\nSysmon 14 (registry rename)\n4657 (Security registry change)"
+    "Корреляции": "Sysmon 13 (registry value set)\nSysmon 14 (registry rename)\n4657 (Security registry change)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 12\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Реестр",
@@ -218,7 +230,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-13",
     "SPL-шаблон": "index=sysmon EventCode=13 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  (TargetObject=\"*\\\\EnableLUA\" AND Details=\"DWORD (0x00000000)\")\n  OR TargetObject=\"*\\\\DisableAntiSpyware\"\n  OR TargetObject IN (\"*\\\\Run\\\\*\",\"*\\\\RunOnce\\\\*\")\n| table _time, host, Image, TargetObject, Details",
-    "Корреляции": "Sysmon 12 (registry key created)\nSysmon 14 (renamed)\n4657 (Security)"
+    "Корреляции": "Sysmon 12 (registry key created)\nSysmon 14 (renamed)\n4657 (Security)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 13\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Реестр",
@@ -235,7 +248,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-14",
     "SPL-шаблон": "index=sysmon EventCode=14 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Image, TargetObject, NewName",
-    "Корреляции": "Sysmon 12 (key created/deleted)\nSysmon 13 (value set)\n4657 (Security)"
+    "Корреляции": "Sysmon 12 (key created/deleted)\nSysmon 13 (value set)\n4657 (Security)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 14\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Файловая система",
@@ -252,7 +266,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-15",
     "SPL-шаблон": "index=sysmon EventCode=15 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetFilename=\"*:*\"\n| table _time, host, Image, TargetFilename, StreamHash",
-    "Корреляции": "Sysmon 11 (file created)\nSysmon 1 (запуск из ADS)\n4663 (file access)"
+    "Корреляции": "Sysmon 11 (file created)\nSysmon 1 (запуск из ADS)\n4663 (file access)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 15\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Система",
@@ -269,7 +284,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-16",
     "SPL-шаблон": "index=sysmon EventCode=16 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Configuration, ConfigurationFileHash",
-    "Корреляции": "Sysmon 4 (service state changed)\nSysmon 255 (errors)\n4688 (sysmon.exe -c)"
+    "Корреляции": "Sysmon 4 (service state changed)\nSysmon 255 (errors)\n4688 (sysmon.exe -c)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 16\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "IPC",
@@ -286,7 +302,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-17",
     "SPL-шаблон": "index=sysmon EventCode=17 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  PipeName IN (\"\\\\*lsadump*\",\"\\\\*wceservice*\",\"\\\\*mimikatz*\",\"\\\\*paexec*\",\"\\\\*PSEXESVC*\")\n| table _time, host, Image, PipeName",
-    "Корреляции": "Sysmon 18 (pipe connected — пара)\nSysmon 1 (создавший процесс)\n5145 (named pipe over network)"
+    "Корреляции": "Sysmon 18 (pipe connected — пара)\nSysmon 1 (создавший процесс)\n5145 (named pipe over network)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 17\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "IPC",
@@ -303,7 +320,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-18",
     "SPL-шаблон": "index=sysmon EventCode=18 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  PipeName IN (\"\\\\*PSEXESVC*\",\"\\\\*lsadump*\",\"\\\\*atsvc*\")\n| table _time, host, Image, PipeName",
-    "Корреляции": "Sysmon 17 (pipe created — пара)\n4624 LogonType=3 от удалённого источника\n5140 (network share)"
+    "Корреляции": "Sysmon 17 (pipe created — пара)\n4624 LogonType=3 от удалённого источника\n5140 (network share)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 18\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "WMI",
@@ -320,7 +338,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-19",
     "SPL-шаблон": "index=sysmon EventCode=19 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, EventNamespace, Name, Query",
-    "Корреляции": "Sysmon 20 (consumer)\nSysmon 21 (filter→consumer binding)\nWMI persistence chain: 19→20→21"
+    "Корреляции": "Sysmon 20 (consumer)\nSysmon 21 (filter→consumer binding)\nWMI persistence chain: 19→20→21",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 19\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "WMI",
@@ -337,7 +356,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-20",
     "SPL-шаблон": "index=sysmon EventCode=20 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, Name, Type, Destination",
-    "Корреляции": "Sysmon 19 (filter)\nSysmon 21 (binding)\nWMI persistence: 19+20+21 = полная цепочка"
+    "Корреляции": "Sysmon 19 (filter)\nSysmon 21 (binding)\nWMI persistence: 19+20+21 = полная цепочка",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 20\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "WMI",
@@ -354,7 +374,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-21",
     "SPL-шаблон": "index=sysmon EventCode=21 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, Consumer, Filter",
-    "Корреляции": "Sysmon 19 (filter)\nSysmon 20 (consumer)\nWMI Event Subscription persistence"
+    "Корреляции": "Sysmon 19 (filter)\nSysmon 20 (consumer)\nWMI Event Subscription persistence",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 21\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Сеть",
@@ -371,7 +392,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-22",
     "SPL-шаблон": "index=sysmon EventCode=22 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  (QueryName=\"*.onion\" OR len(QueryName)>50 OR QueryName=\"*.bit\" OR QueryName=\"*.tor*\")\n| stats count by QueryName, Image, host",
-    "Корреляции": "Sysmon 3 (соединение по полученному IP)\nSysmon 1 (процесс)\n5156 (Security WFP)"
+    "Корреляции": "Sysmon 3 (соединение по полученному IP)\nSysmon 1 (процесс)\n5156 (Security WFP)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 22\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Файловая система",
@@ -388,7 +410,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-23",
     "SPL-шаблон": "index=sysmon EventCode=23 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetFilename IN (\"*\\\\Windows\\\\System32\\\\*\",\"*\\\\Windows\\\\Logs\\\\*\")\n| table _time, host, Image, TargetFilename, User, Hashes",
-    "Корреляции": "Sysmon 26 (file delete logged)\n4660/4663 (Security file delete)\nSysmon 1 (процесс)"
+    "Корреляции": "Sysmon 26 (file delete logged)\n4660/4663 (Security file delete)\nSysmon 1 (процесс)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 23\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Система",
@@ -405,7 +428,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-24",
     "SPL-шаблон": "index=sysmon EventCode=24 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT Image IN (\"*\\\\explorer.exe\",\"*\\\\OUTLOOK.EXE\",\"*\\\\teams.exe\")\n| table _time, host, Image, User",
-    "Корреляции": "Sysmon 1 (процесс)\nSysmon 11 (file created с буфером)"
+    "Корреляции": "Sysmon 1 (процесс)\nSysmon 11 (file created с буфером)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 24\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Процессы",
@@ -422,7 +446,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-25",
     "SPL-шаблон": "index=sysmon EventCode=25 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Image, Type",
-    "Корреляции": "Sysmon 1 (создание процесса)\nSysmon 7 (DLL load)\nSysmon 8 (remote thread)\nКлассический process injection chain"
+    "Корреляции": "Sysmon 1 (создание процесса)\nSysmon 7 (DLL load)\nSysmon 8 (remote thread)\nКлассический process injection chain",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 25\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Файловая система",
@@ -439,7 +464,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-26",
     "SPL-шаблон": "index=sysmon EventCode=26 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetFilename IN (\"*\\\\Temp\\\\*.exe\",\"*\\\\Logs\\\\*\")\n| table _time, host, Image, TargetFilename, User",
-    "Корреляции": "Sysmon 23 (delete archived)\n4660/4663 (Security)\nSysmon 11 (был создан)"
+    "Корреляции": "Sysmon 23 (delete archived)\n4660/4663 (Security)\nSysmon 11 (был создан)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 26\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Защита",
@@ -456,7 +482,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-27",
     "SPL-шаблон": "index=sysmon EventCode=27 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Image, TargetFilename, User, RuleName",
-    "Корреляции": "Sysmon 11 (попытка создания)\nSysmon 29 (executable detected)\nFileBlock policy active"
+    "Корреляции": "Sysmon 11 (попытка создания)\nSysmon 29 (executable detected)\nFileBlock policy active",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 27\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Защита",
@@ -473,7 +500,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-28",
     "SPL-шаблон": "index=sysmon EventCode=28 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Image, TargetFilename, User",
-    "Корреляции": "Sysmon 23/26 (delete events)\n4688 (sdelete.exe)\nFileBlockShredding policy"
+    "Корреляции": "Sysmon 23/26 (delete events)\n4688 (sdelete.exe)\nFileBlockShredding policy",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 28\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Файловая система",
@@ -490,7 +518,8 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-29",
     "SPL-шаблон": "index=sysmon EventCode=29 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetFilename IN (\"*\\\\Temp\\\\*\",\"*\\\\AppData\\\\*\",\"*\\\\Public\\\\*\")\n| table _time, host, Image, TargetFilename, User, Hashes",
-    "Корреляции": "Sysmon 11 (file created — более широкий)\nSysmon 1 (запуск созданного PE)\n4688 (Security)"
+    "Корреляции": "Sysmon 11 (file created — более широкий)\nSysmon 1 (запуск созданного PE)\n4688 (Security)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 29\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   },
   {
     "Категория": "Система",
@@ -507,6 +536,7 @@
     "Версия": "4.0+",
     "Документация": "https://learn.microsoft.com/en-us/sysmon/event-255",
     "SPL-шаблон": "index=sysmon EventCode=255 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" User=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by host, ID, Description",
-    "Корреляции": "Sysmon 4 (service state changed)\nSysmon 16 (config changed)\n7036 (System log — sysmon service)"
+    "Корреляции": "Sysmon 4 (service state changed)\nSysmon 16 (config changed)\n7036 (System log — sysmon service)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Sysmon/Operational\" and EventID == 255\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\""
   }
 ]

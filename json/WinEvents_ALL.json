@@ -17,7 +17,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4624 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` Logon_Type IN (2,3,10)\n| stats count values(IpAddress) AS src_ips by Account_Name, Logon_Type, host\n| where count>5",
-    "Корреляции": "4625 (неудачные попытки перед 4624 = brute-force)\n4634/4647 (выход)\n4672 (привилегированный вход)\n4769 (Kerberos TGS для сетевых входов)"
+    "Корреляции": "4625 (неудачные попытки перед 4624 = brute-force)\n4634/4647 (выход)\n4672 (привилегированный вход)\n4769 (Kerberos TGS для сетевых входов)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4624\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -37,7 +38,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4625 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count dc(Account_Name) AS unique_users values(IpAddress) AS src_ips by host, Sub_Status\n| where count>10",
-    "Корреляции": "4740 (lockout после серии 4625)\n4771 (Kerberos pre-auth fail)\n4624 (успех после серии 4625 = возможный взлом)"
+    "Корреляции": "4740 (lockout после серии 4625)\n4771 (Kerberos pre-auth fail)\n4624 (успех после серии 4625 = возможный взлом)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4625\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Процессы",
@@ -57,7 +59,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4688 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` \n  (New_Process_Name=\"*\\\\powershell.exe\" OR New_Process_Name=\"*\\\\cmd.exe\" OR New_Process_Name=\"*\\\\wmic.exe\")\n| eval susp=if(match(Process_Command_Line,\"(?i)(-enc|frombase64|downloadstring|iex|invoke-expression)\"),1,0)\n| where susp=1",
-    "Корреляции": "4689 (завершение процесса)\n4648 (logon с explicit credentials)\n4104 (PowerShell script block)\n4697 / 7045 (установка службы)"
+    "Корреляции": "4689 (завершение процесса)\n4648 (logon с explicit credentials)\n4104 (PowerShell script block)\n4697 / 7045 (установка службы)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4688\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Системные события",
@@ -77,7 +80,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege — требуется для очистки журнала безопасности",
     "SPL-шаблон": "index=winevent* EventCode=1102 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, SubjectUserName, SubjectDomainName",
-    "Корреляции": "104 (очистка журнала System)\n1100 (служба журнала остановлена)\n4719 (изменение политики аудита перед очисткой)"
+    "Корреляции": "104 (очистка журнала System)\n1100 (служба журнала остановлена)\n4719 (изменение политики аудита перед очисткой)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 1102\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "PowerShell",
@@ -97,7 +101,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* source=\"WinEventLog:Microsoft-Windows-PowerShell/Operational\" EventCode=4104 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| eval susp=if(match(ScriptBlockText,\"(?i)(invoke-mimikatz|frombase64|downloadstring|iex |amsi|reflection.assembly)\"),1,0)\n| where susp=1",
-    "Корреляции": "4103 (PowerShell pipeline)\n4688 (запуск powershell.exe)\n4624 LogonType=3 (сетевой вызов PS)\n400/600 (PowerShell engine в Windows PowerShell log)"
+    "Корреляции": "4103 (PowerShell pipeline)\n4688 (запуск powershell.exe)\n4624 LogonType=3 (сетевой вызов PS)\n400/600 (PowerShell engine в Windows PowerShell log)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-PowerShell/Operational\" and EventID == 4104\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "RDP (RemoteConnectionManager)",
@@ -117,7 +122,8 @@
     "Причины блокировки": "Политики безопасности (ограничение по IP, время доступа), блокировка учетной записи.",
     "Ключевые привилегии": "SeRemoteInteractiveLogonRight",
     "SPL-шаблон": "index=winevent* source=\"*TerminalServices-RemoteConnectionManager*\" EventCode=1149 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count values(Param3) AS src_ip by Param1, host",
-    "Корреляции": "4624 LogonType=10 (интерактивный RDP)\n4778 (RDP session reconnect)\n21/22/25 (LocalSessionManager events)"
+    "Корреляции": "4624 LogonType=10 (интерактивный RDP)\n4778 (RDP session reconnect)\n21/22/25 (LocalSessionManager events)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational\" and EventID == 1149\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Планировщик заданий",
@@ -137,7 +143,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4698 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| eval susp=if(match(Task_Content,\"(?i)(powershell|cmd|wscript|cscript|rundll32|mshta)\"),1,0)\n| where susp=1\n| table _time, host, Subject_User_Name, Task_Name, Task_Content",
-    "Корреляции": "4700/4701 (вкл/выкл задачи)\n4702 (изменение задачи)\n106 и 200/201 (Task Scheduler/Operational)\n4688 (запуск процесса из задачи)"
+    "Корреляции": "4700/4701 (вкл/выкл задачи)\n4702 (изменение задачи)\n106 и 200/201 (Task Scheduler/Operational)\n4688 (запуск процесса из задачи)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4698\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к ресурсам",
@@ -157,7 +164,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=5140 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` Share_Name IN (\"\\\\\\\\*\\\\ADMIN$\",\"\\\\\\\\*\\\\C$\",\"\\\\\\\\*\\\\IPC$\")\n| stats count values(Source_Address) AS src_ips by Account_Name, Share_Name, host",
-    "Корреляции": "5145 (проверка доступа к share)\n4624 LogonType=3 (сетевой вход)\n4672 (привилегии при входе)\n4688 (запуск утилит либо psexec)"
+    "Корреляции": "5145 (проверка доступа к share)\n4624 LogonType=3 (сетевой вход)\n4672 (привилегии при входе)\n4688 (запуск утилит либо psexec)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5140\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам",
@@ -177,7 +185,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4657 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` \n  Object_Name IN (\"*\\\\Run\\\\*\",\"*\\\\RunOnce\\\\*\",\"*\\\\Image File Execution Options\\\\*\",\"*\\\\AppInit_DLLs*\")\n| table _time, host, Subject_User_Name, Object_Name, Old_Value, New_Value, Process_Name",
-    "Корреляции": "4656/4663 (доступ к объекту реестра)\n4688 (процесс, изменивший ключ)\nSysmon 12/13 (registry add/set)"
+    "Корреляции": "4656/4663 (доступ к объекту реестра)\n4688 (процесс, изменивший ключ)\nSysmon 12/13 (registry add/set)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4657\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Брандмауэр",
@@ -197,7 +206,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4946 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Rule_Name, Profile, Action, Application_Path, Subject_User_Name",
-    "Корреляции": "4947 (изменение правила)\n4948 (удаление правила)\n4950 (изменение настроек брандмауэра)\n4688 (netsh advfirewall)"
+    "Корреляции": "4947 (изменение правила)\n4948 (удаление правила)\n4950 (изменение настроек брандмауэра)\n4688 (netsh advfirewall)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4946\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -217,7 +227,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4782 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count values(Process_Name) AS procs by Account_Name, host, Subject_User_Name\n| where count>3",
-    "Корреляции": "4662 (доступ к DS объекту с GUID DRSGetNCChanges = DCSync)\n4624 LogonType=3 от КД\n4688 (mimikatz, ntdsutil, secretsdump)"
+    "Корреляции": "4662 (доступ к DS объекту с GUID DRSGetNCChanges = DCSync)\n4624 LogonType=3 от КД\n4688 (mimikatz, ntdsutil, secretsdump)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4782\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -237,7 +248,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4776 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` Status!=0x0\n| stats count values(Workstation) AS workstations by TargetUserName, Status\n| where count>10",
-    "Корреляции": "4625 (общий fail logon)\n4624 LogonType=3 (сетевой)\n4740 (lockout)\n8004 (NTLM logging)"
+    "Корреляции": "4625 (общий fail logon)\n4624 LogonType=3 (сетевой)\n4740 (lockout)\n8004 (NTLM logging)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4776\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -257,7 +269,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeUserAccountControlPrivilege, SeAddUsersPrivilege — создание учётных записей",
     "SPL-шаблон": "index=winevent* EventCode=4720 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Target_User_Name, Target_Domain_Name, SAM_Account_Name",
-    "Корреляции": "4722 (включение учётки)\n4724 (сброс пароля)\n4728/4732 (добавление в группу)\n4738 (изменение атрибутов) — классическая цепочка создания backdoor-аккаунта"
+    "Корреляции": "4722 (включение учётки)\n4724 (сброс пароля)\n4728/4732 (добавление в группу)\n4738 (изменение атрибутов) — классическая цепочка создания backdoor-аккаунта",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4720\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Процессы",
@@ -277,7 +290,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4697 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| eval susp=if(match(Service_File_Name,\"(?i)(\\\\\\\\Temp\\\\\\\\|\\\\\\\\AppData\\\\\\\\|powershell|cmd\\\\.exe|\\\\.bat|\\\\.vbs)\"),1,0)\n| where susp=1",
-    "Корреляции": "7045 (аналог в System log)\n4688 (sc.exe, services.exe)\n4624 LogonType=3 + 5140 (служба создана удалённо — lateral movement)"
+    "Корреляции": "7045 (аналог в System log)\n4688 (sc.exe, services.exe)\n4624 LogonType=3 + 5140 (служба создана удалённо — lateral movement)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4697\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Привилегии",
@@ -297,7 +311,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "['SeDebugPrivilege - отладка процессов', 'SeTcbPrivilege - часть TCB (Trusted Computing Base)', 'SeBackupPrivilege - право на резервное копирование', 'SeRestorePrivilege - право на восстановление', 'SeTakeOwnershipPrivilege - право на взятие владения', 'SeImpersonatePrivilege - право на имперсонацию']",
     "SPL-шаблон": "index=winevent* EventCode=4672 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count values(Privilege_List) AS privs by Account_Name, host\n| where count<5",
-    "Корреляции": "4624 (вход, порождающий 4672)\n4673/4674 (использование привилегий)\n4688 с Token Elevation Type 1 (полный токен)"
+    "Корреляции": "4624 (вход, порождающий 4672)\n4673/4674 (использование привилегий)\n4688 с Token Elevation Type 1 (полный токен)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4672\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Сеть",
@@ -317,7 +332,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=5156 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` Destination_Port IN (4444,8080,8443,1080,9001)\n| stats count by Application_Name, Destination_Address, Destination_Port, host",
-    "Корреляции": "5157 (блокировка подключения)\n5152/5154 (WFP блок/listen)\n4688 (процесс, создавший соединение)\nSysmon 3 (network connection)"
+    "Корреляции": "5157 (блокировка подключения)\n5152/5154 (WFP блок/listen)\n4688 (процесс, создавший соединение)\nSysmon 3 (network connection)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5156\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "PowerShell",
@@ -337,7 +353,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* source=\"*PowerShell/Operational\" EventCode=4103 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  HostApplication=\"*-enc*\" OR Payload=\"*Invoke-*\"\n| table _time, host, User, HostApplication, Payload",
-    "Корреляции": "4104 (script block, основное)\n4105/4106 (начало/окончание скрипта)\n400/600 (Windows PowerShell log)"
+    "Корреляции": "4104 (script block, основное)\n4105/4106 (начало/окончание скрипта)\n400/600 (Windows PowerShell log)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-PowerShell/Operational\" and EventID == 4103\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -357,7 +374,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4634 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats min(_time) AS start_time max(_time) AS end_time by Target_Logon_ID, Target_User_Name\n| eval duration_sec=end_time-start_time",
-    "Корреляции": "4624 (вход — пара по Logon_ID)\n4647 (явный logoff)\n4779 (RDP disconnect)"
+    "Корреляции": "4624 (вход — пара по Logon_ID)\n4647 (явный logoff)\n4779 (RDP disconnect)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4634\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Планировщик заданий",
@@ -377,7 +395,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4699 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Task_Name, Task_Content",
-    "Корреляции": "4698 (создание задачи)\n4702 (изменение задачи)\n141 (Task Scheduler/Operational)"
+    "Корреляции": "4698 (создание задачи)\n4702 (изменение задачи)\n141 (Task Scheduler/Operational)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4699\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к ресурсам",
@@ -397,7 +416,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=5145 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` \n  Share_Name IN (\"\\\\\\\\*\\\\ADMIN$\",\"\\\\\\\\*\\\\C$\")\n| stats count dc(Source_Address) AS unique_src by Account_Name\n| where unique_src>1",
-    "Корреляции": "5140 (фактический доступ)\n4624 LogonType=3\n4688 (net.exe, psexec.exe)"
+    "Корреляции": "5140 (фактический доступ)\n4624 LogonType=3\n4688 (net.exe, psexec.exe)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5145\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -417,7 +437,8 @@
     "Причины блокировки": "['Слишком много неудачных попыток входа', 'Административная блокировка', 'Истек срок действия учетной записи', 'Политика блокировки учетной записи']",
     "Ключевые привилегии": "Не требуется (автоматическая блокировка системой)",
     "SPL-шаблон": "index=winevent* EventCode=4740 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Account_Name, Caller_Computer_Name, Subject_User_Name",
-    "Корреляции": "4625 (серия неудачных входов до lockout)\n4771 (Kerberos pre-auth fail)\n4767 (разблокировка)"
+    "Корреляции": "4625 (серия неудачных входов до lockout)\n4771 (Kerberos pre-auth fail)\n4767 (разблокировка)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4740\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -437,7 +458,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeUserAccountControlPrivilege, SeDeleteUsersPrivilege — удаление учётных записей",
     "SPL-шаблон": "index=winevent* EventCode=4726 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Target_User_Name, Target_Domain_Name",
-    "Корреляции": "4720 (создание — если жизненный цикл backdoor: создал → использовал → удалил)\n4624/4634 по этой учётке перед удалением"
+    "Корреляции": "4720 (создание — если жизненный цикл backdoor: создал → использовал → удалил)\n4624/4634 по этой учётке перед удалением",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4726\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -457,7 +479,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4768 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` (Ticket_Encryption_Type=0x17 OR Ticket_Encryption_Type=0x18)\n| stats count by Account_Name, Client_Address, Service_Name",
-    "Корреляции": "4769 (TGS после TGT)\n4771 (неудачный TGT — возможный AS-REP roast)\nSub_Status 0x18 (bad password)"
+    "Корреляции": "4769 (TGS после TGT)\n4771 (неудачный TGT — возможный AS-REP roast)\nSub_Status 0x18 (bad password)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4768\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -477,7 +500,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4648 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT (Account_Whose_Credentials_Were_Used=\"*$\")\n| table _time, host, Subject_User_Name, Account_Whose_Credentials_Were_Used, Target_Server_Name, Process_Name",
-    "Корреляции": "4624 LogonType=9 (NewCredentials — пара к 4648)\n4688 (runas.exe, psexec.exe)\n5140/5145 (использование новых кредов)"
+    "Корреляции": "4624 LogonType=9 (NewCredentials — пара к 4648)\n4688 (runas.exe, psexec.exe)\n5140/5145 (использование новых кредов)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4648\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -497,7 +521,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4769 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` \n  Ticket_Encryption_Type=0x17 \n  Service_Name!=\"*$\" Service_Name!=\"krbtgt\"\n| stats count values(Client_Address) AS src by Account_Name, Service_Name\n| where count>2",
-    "Корреляции": "4768 (TGT)\n4624 LogonType=3\n4688 (Rubeus, Invoke-Kerberoast) — характерная Kerberoasting-цепочка"
+    "Корреляции": "4768 (TGT)\n4624 LogonType=3\n4688 (Rubeus, Invoke-Kerberoast) — характерная Kerberoasting-цепочка",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4769\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -517,7 +542,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeUserAccountControlPrivilege — отключение учётных записей",
     "SPL-шаблон": "index=winevent* EventCode=4725 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Target_User_Name",
-    "Корреляции": "4724 (сброс пароля до отключения)\n4726 (удаление)\n4625 с 0xC0000072 (попытки войти в отключённую учётку)"
+    "Корреляции": "4724 (сброс пароля до отключения)\n4726 (удаление)\n4625 с 0xC0000072 (попытки войти в отключённую учётку)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4725\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -537,7 +563,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeUserAccountControlPrivilege, \"Сброс паролях\" (Reset Password ACE в AD)",
     "SPL-шаблон": "index=winevent* EventCode=4724 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by Subject_User_Name, Target_User_Name, host\n| where Subject_User_Name!=Target_User_Name",
-    "Корреляции": "4723 (смена своего пароля — отличать от 4724)\n4738 (изменение атрибутов)\n4624 по целевой учётке после 4724"
+    "Корреляции": "4723 (смена своего пароля — отличать от 4724)\n4738 (изменение атрибутов)\n4624 по целевой учётке после 4724",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4724\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -557,7 +584,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeUserAccountControlPrivilege — включение учётных записей",
     "SPL-шаблон": "index=winevent* EventCode=4722 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Target_User_Name",
-    "Корреляции": "4720 (создание)\n4725 (предыдущее отключение)\n4724 (сброс пароля)"
+    "Корреляции": "4720 (создание)\n4725 (предыдущее отключение)\n4724 (сброс пароля)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4722\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -577,7 +605,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege, права на изменение глобальных групп",
     "SPL-шаблон": "index=winevent* EventCode=4728 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Group_Name IN (\"Domain Admins\",\"Enterprise Admins\",\"Schema Admins\")\n| table _time, host, Subject_User_Name, Member_Name, Group_Name",
-    "Корреляции": "4729 (удаление из группы)\n4732 (добавление в локальную группу)\n4624 LogonType=10 (RDP как Domain Admin)"
+    "Корреляции": "4729 (удаление из группы)\n4732 (добавление в локальную группу)\n4624 LogonType=10 (RDP как Domain Admin)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4728\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -597,7 +626,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege, права на изменение глобальных групп",
     "SPL-шаблон": "index=winevent* EventCode=4729 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Member_Name, Group_Name",
-    "Корреляции": "4728 (предшествующее добавление)\n4726 (удаление учётки)\n4733 (удаление из локальной группы)"
+    "Корреляции": "4728 (предшествующее добавление)\n4726 (удаление учётки)\n4733 (удаление из локальной группы)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4729\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -617,7 +647,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege — управление локальными группами безопасности",
     "SPL-шаблон": "index=winevent* EventCode=4732 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` Group_Name=\"Administrators\"\n| table _time, host, Subject_User_Name, Member_SID, Group_Name",
-    "Корреляции": "4733 (удаление из локальной группы)\n4728 (добавление в глобальную)\n4624 LogonType=10/2 + 4672"
+    "Корреляции": "4733 (удаление из локальной группы)\n4728 (добавление в глобальную)\n4624 LogonType=10/2 + 4672",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4732\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Процессы",
@@ -637,7 +668,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4689 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats min(_time) AS start max(_time) AS end by host, Process_ID, New_Process_Name\n| eval duration_sec=end-start",
-    "Корреляции": "4688 (пара по Process ID)\nSysmon 5 (process terminated)"
+    "Корреляции": "4688 (пара по Process ID)\nSysmon 5 (process terminated)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4689\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Планировщик заданий",
@@ -657,7 +689,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4702 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Task_Name, Task_New_Content",
-    "Корреляции": "4698 (создание задачи)\n4699 (удаление)\n4700/4701 (вкл/выкл)"
+    "Корреляции": "4698 (создание задачи)\n4699 (удаление)\n4700/4701 (вкл/выкл)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4702\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам",
@@ -677,7 +710,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "Зависит от объекта: SeBackupPrivilege, SeRestorePrivilege, SeTakeOwnershipPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4656 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Object_Name IN (\"*\\\\SAM\",\"*\\\\SECURITY\",\"*\\\\SYSTEM\",\"*\\\\lsass.exe\")\n  Access_Mask=\"0x*\"\n| table _time, host, Process_Name, Object_Name, Accesses",
-    "Корреляции": "4663 (фактический доступ после 4656)\n4660 (удаление)\n4674 (использование привилегии)"
+    "Корреляции": "4663 (фактический доступ после 4656)\n4660 (удаление)\n4674 (использование привилегии)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4656\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам",
@@ -697,7 +731,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "Зависит от объекта и запрашиваемых прав доступа",
     "SPL-шаблон": "index=winevent* EventCode=4663 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` Accesses=\"*WriteData*\" OR Accesses=\"*DELETE*\"\n| table _time, host, Process_Name, Object_Name, Accesses, Subject_User_Name",
-    "Корреляции": "4656 (запрос handle)\n4660 (удаление)\n4670 (изменение разрешений)"
+    "Корреляции": "4656 (запрос handle)\n4660 (удаление)\n4670 (изменение разрешений)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4663\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам",
@@ -717,7 +752,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4662 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` \n  Properties=\"*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*\" OR Properties=\"*1131f6ad-9c07-11d1-f79f-00c04fc2dcd2*\" OR Properties=\"*89e95b76-444d-4c62-991a-0facbeda640c*\"\n| table _time, host, Subject_User_Name, Object_Name, Properties",
-    "Корреляции": "4624 LogonType=3 от КД (DCSync)\n4742 (изменение объекта AD)\n4782 (доступ к хешу)"
+    "Корреляции": "4624 LogonType=3 от КД (DCSync)\n4742 (изменение объекта AD)\n4782 (доступ к хешу)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4662\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Привилегии",
@@ -737,7 +773,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "Зависит от привилегии, использованной в операции",
     "SPL-шаблон": "index=winevent* EventCode=4673 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by Process_Name, Privilege_List, host\n| where count>50",
-    "Корреляции": "4672 (привилегированный вход)\n4674 (операция над объектом)\n4688 (процесс, вызвавший операцию)"
+    "Корреляции": "4672 (привилегированный вход)\n4674 (операция над объектом)\n4688 (процесс, вызвавший операцию)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4673\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Системные события",
@@ -757,7 +794,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4608 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by host, _time",
-    "Корреляции": "6005 (Event Log service started — System log)\n4609 (Windows shutting down)\n1100/1101"
+    "Корреляции": "6005 (Event Log service started — System log)\n4609 (Windows shutting down)\n1100/1101",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4608\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Системные события",
@@ -777,7 +815,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSystemtimePrivilege — изменение системного времени",
     "SPL-шаблон": "index=winevent* EventCode=4616 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT Process_Name=\"*\\\\svchost.exe\" NOT Process_Name=\"*\\\\VBoxService.exe\"\n| table _time, host, Subject_User_Name, Process_Name, Previous_Time, New_Time",
-    "Корреляции": "4688 (процесс, изменивший время)\n4768/4769 с KRB_AP_ERR_SKEW (clock skew)\n1 и 158 (W32time Service)"
+    "Корреляции": "4688 (процесс, изменивший время)\n4768/4769 с KRB_AP_ERR_SKEW (clock skew)\n1 и 158 (W32time Service)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4616\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Брандмауэр",
@@ -797,7 +836,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "Права администратора для изменения правил брандмауэра",
     "SPL-шаблон": "index=winevent* EventCode=4947 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Rule_Name, Modified_Fields",
-    "Корреляции": "4946/4948 (добавление/удаление правил)\n4950 (изменение настроек)\n4688 (netsh advfirewall)"
+    "Корреляции": "4946/4948 (добавление/удаление правил)\n4950 (изменение настроек)\n4688 (netsh advfirewall)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4947\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Сеть",
@@ -817,7 +857,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=5157 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by Application_Name, Destination_Address, Destination_Port\n| where count>100",
-    "Корреляции": "5156 (разрешённые подключения)\n5152 (WFP блокировка пакета)\n4946 (добавление правила)"
+    "Корреляции": "5156 (разрешённые подключения)\n5152 (WFP блокировка пакета)\n4946 (добавление правила)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5157\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -837,7 +878,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4778 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count values(Client_Address) AS src by Account_Name, host",
-    "Корреляции": "4779 (RDP disconnect)\n4624 LogonType=10\n1149 (успех RDP-аутентификации)"
+    "Корреляции": "4779 (RDP disconnect)\n4624 LogonType=10\n1149 (успех RDP-аутентификации)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4778\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -857,7 +899,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4779 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by Account_Name, Client_Address, host",
-    "Корреляции": "4778 (reconnect)\n4634 (выход)\n24 (LocalSessionManager disconnect)"
+    "Корреляции": "4778 (reconnect)\n4634 (выход)\n24 (LocalSessionManager disconnect)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4779\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -877,7 +920,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4800 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats values(host) AS hosts by Account_Name\n| where mvcount(hosts)>3",
-    "Корреляции": "4801 (разблокировка)\n4624 LogonType=7 (Unlock)\n4634 нет (сессия не завершена)"
+    "Корреляции": "4801 (разблокировка)\n4624 LogonType=7 (Unlock)\n4634 нет (сессия не завершена)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4800\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -897,7 +941,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4801 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Account_Name, Session_ID",
-    "Корреляции": "4800 (блокировка)\n4624 LogonType=7\n4625 перед 4801 (подбор пароля на консоли)"
+    "Корреляции": "4800 (блокировка)\n4624 LogonType=7\n4625 перед 4801 (подбор пароля на консоли)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4801\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -917,7 +962,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4771 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` Failure_Code=0x18\n| stats count by Account_Name, Client_Address\n| where count>5",
-    "Корреляции": "4768 (TGT)\n4625 (общий fail logon)\n4740 (lockout)\nFailure 0x6 = AS-REP roasting indicator"
+    "Корреляции": "4768 (TGT)\n4625 (общий fail logon)\n4740 (lockout)\nFailure 0x6 = AS-REP roasting indicator",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4771\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -937,7 +983,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeEnableDelegationPrivilege, SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4767 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Target_User_Name",
-    "Корреляции": "4740 (блокировка до разблокировки)\n4625 после 4767 (быстрый повтор атаки)\n4724 (сброс пароля)"
+    "Корреляции": "4740 (блокировка до разблокировки)\n4625 после 4767 (быстрый повтор атаки)\n4724 (сброс пароля)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4767\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -957,7 +1004,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeEnableDelegationPrivilege, SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4738 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Account_Expires=\"<never>\" OR Password_Last_Set=\"<never>\"\n| table _time, host, Subject_User_Name, Target_User_Name, Account_Expires, Password_Last_Set, User_Account_Control",
-    "Корреляции": "4720 (создание)\n4724 (сброс пароля)\n4781 (изменение имени)"
+    "Корреляции": "4720 (создание)\n4724 (сброс пароля)\n4781 (изменение имени)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4738\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -977,7 +1025,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4754 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Group_Name IN (\"Domain Admins\",\"Enterprise Admins\")\n| table _time, host, Subject_User_Name, Group_Name",
-    "Корреляции": "4755 (изменение)\n4758 (удаление)\n4756 (добавление члена)"
+    "Корреляции": "4755 (изменение)\n4758 (удаление)\n4756 (добавление члена)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4754\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -997,7 +1046,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4755 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Group_Name, Changed_Attributes",
-    "Корреляции": "4754 (создание)\n4756/4757 (добавление/удаление членов)"
+    "Корреляции": "4754 (создание)\n4756/4757 (добавление/удаление членов)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4755\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Разрешения объектов",
@@ -1017,7 +1067,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeTakeOwnershipPrivilege, SeSecurityPrivilege, SeBackupPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4670 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Object_Type IN (\"Key\",\"File\")\n| table _time, host, Subject_User_Name, Object_Name, Process_Name, Old_Security_Descriptor, New_Security_Descriptor",
-    "Корреляции": "4656/4663 (доступ к объекту)\n4674 (использование SeTakeOwnership)\n4688 (процесс, изменивший ACL)"
+    "Корреляции": "4656/4663 (доступ к объекту)\n4674 (использование SeTakeOwnership)\n4688 (процесс, изменивший ACL)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4670\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Разрешения объектов",
@@ -1037,7 +1088,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4912 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Category, Subcategory, Changes",
-    "Корреляции": "4719 (изменение политики аудита)\n4902/4904/4905 (политики аудита)\n4688 (auditpol.exe)"
+    "Корреляции": "4719 (изменение политики аудита)\n4902/4904/4905 (политики аудита)\n4688 (auditpol.exe)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4912\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аудит и политики",
@@ -1057,7 +1109,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4715 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Object_Name, Old_SACL, New_SACL",
-    "Корреляции": "4719 (audit policy change)\n4670 (DACL change)\n4717/4718 (права входа)"
+    "Корреляции": "4719 (audit policy change)\n4670 (DACL change)\n4717/4718 (права входа)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4715\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аудит и политики",
@@ -1077,7 +1130,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4704 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by Subject_User_Name, Target_User_Name, Privilege_List, host",
-    "Корреляции": "4705 (отзыв прав)\n4672 (использование привилегии после назначения)\n4717 (разница: 4717 — права входа, 4704 — все привилегии)"
+    "Корреляции": "4705 (отзыв прав)\n4672 (использование привилегии после назначения)\n4717 (разница: 4717 — права входа, 4704 — все привилегии)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4704\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аудит и политики",
@@ -1097,7 +1151,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4719 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Category, Subcategory, Changes",
-    "Корреляции": "4912 (изменение per-user audit)\n1102 (очистка журнала)\n4688 (auditpol.exe /clear)"
+    "Корреляции": "4912 (изменение per-user audit)\n1102 (очистка журнала)\n4688 (auditpol.exe /clear)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4719\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Разведка (Discovery)",
@@ -1117,7 +1172,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4798 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT Caller_Process_Name=\"*\\\\lsass.exe\" NOT Caller_Process_Name=\"*\\\\svchost.exe\"\n| stats count values(Caller_Process_Name) AS callers by Subject_User_Name, Target_User_Name\n| where count>20",
-    "Корреляции": "4799 (перечисление групп)\n4688 (net.exe, whoami /groups, AdFind)"
+    "Корреляции": "4799 (перечисление групп)\n4688 (net.exe, whoami /groups, AdFind)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4798\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Разведка (Discovery)",
@@ -1137,7 +1193,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4799 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Group_Name IN (\"Administrators\",\"Domain Admins\",\"Enterprise Admins\")\n  NOT Caller_Process_Name=\"*\\\\lsass.exe\"\n| table _time, host, Caller_Process_Name, Subject_User_Name, Group_Name",
-    "Корреляции": "4798 (перечисление групп пользователя)\n4688 (net localgroup, BloodHound)"
+    "Корреляции": "4798 (перечисление групп пользователя)\n4688 (net localgroup, BloodHound)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4799\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Разведка (Discovery)",
@@ -1157,7 +1214,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeEnableDelegationPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=5136 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  LDAP_Display_Name IN (\"servicePrincipalName\",\"msDS-AllowedToActOnBehalfOfOtherIdentity\",\"msDS-AllowedToDelegateTo\")\n| table _time, host, Subject_User_Name, Object_DN, LDAP_Display_Name, Value, Operation",
-    "Корреляции": "5137 (создание объекта)\n4742 (изменение компьютера)\nKerberos delegation abuse = 4768/4769 + 5136"
+    "Корреляции": "5137 (создание объекта)\n4742 (изменение компьютера)\nKerberos delegation abuse = 4768/4769 + 5136",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5136\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Разведка (Discovery)",
@@ -1177,7 +1235,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeEnableDelegationPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=5137 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Object_DN, Object_Class",
-    "Корреляции": "5136 (изменение)\n5138 (undelete)\n5139 (перемещение)"
+    "Корреляции": "5136 (изменение)\n5138 (undelete)\n5139 (перемещение)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5137\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Разведка (Discovery)",
@@ -1197,7 +1256,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeEnableDelegationPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=5138 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Object_DN",
-    "Корреляции": "5136 (восстановление изменяет атрибуты)\n5141 (удаление после undelete)"
+    "Корреляции": "5136 (восстановление изменяет атрибуты)\n5141 (удаление после undelete)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5138\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к ресурсам",
@@ -1217,7 +1277,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeCreateGlobalPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=5142 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Share_Name, Share_Path",
-    "Корреляции": "5140/5145 (доступ к созданной папке)\n5143 (изменение share)\n5144 (удаление share)"
+    "Корреляции": "5140/5145 (доступ к созданной папке)\n5143 (изменение share)\n5144 (удаление share)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5142\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Процессы",
@@ -1237,7 +1298,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeDebugPrivilege, SeTcbPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4703 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Enabled_Privileges=\"*SeDebugPrivilege*\" OR Enabled_Privileges=\"*SeTcbPrivilege*\"\n| stats count by Subject_User_Name, Target_Process_Name, Enabled_Privileges",
-    "Корреляции": "4673/4674 (использование привилегии)\n4624 + 4672 (привилегированный вход)\n4688 с Token Elevation Type 1"
+    "Корреляции": "4673/4674 (использование привилегии)\n4624 + 4672 (привилегированный вход)\n4688 с Token Elevation Type 1",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4703\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Устаревшие аутентификации",
@@ -1257,7 +1319,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeImpersonatePrivilege, SeAssignPrimaryTokenPrivilege",
     "SPL-шаблон": "Не применимо (устаревший ID в Win2000-Win2003, в современных OS заменён на 4648)",
-    "Корреляции": "4648 (современный эквивалент в Win2008+)"
+    "Корреляции": "4648 (современный эквивалент в Win2008+)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 552\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Брандмауэр",
@@ -1277,7 +1340,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=5152 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by Application_Name, Destination_Address, Destination_Port\n| where count>50",
-    "Корреляции": "5157 (block by Filtering Platform)\n5156 (разрешённые)\n4946 (firewall rule add)"
+    "Корреляции": "5157 (block by Filtering Platform)\n5156 (разрешённые)\n4946 (firewall rule add)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5031\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам",
@@ -1297,7 +1361,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4660 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Object_Name IN (\"*\\\\Windows\\\\System32\\\\*\",\"*\\\\Windows\\\\SysWOW64\\\\*\",\"*\\\\Logs\\\\*\")\n| table _time, host, Process_Name, Object_Name, Subject_User_Name",
-    "Корреляции": "4656 (handle request с DELETE)\n4663 (фактический DELETE)\nSysmon 23/26 (FileDelete)"
+    "Корреляции": "4656 (handle request с DELETE)\n4663 (фактический DELETE)\nSysmon 23/26 (FileDelete)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4660\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аудит и политики",
@@ -1317,7 +1382,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4904 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Process_Name, Source_Name",
-    "Корреляции": "4905 (отмена регистрации source)\n4906 (изменение CrashOnAuditFail)"
+    "Корреляции": "4905 (отмена регистрации source)\n4906 (изменение CrashOnAuditFail)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4904\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аудит и политики",
@@ -1337,7 +1403,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4906 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Old_Value, New_Value",
-    "Корреляции": "1102 (очистка журнала)\n4719 (изменение политики аудита)\n4904/4905 (source policy)"
+    "Корреляции": "1102 (очистка журнала)\n4719 (изменение политики аудита)\n4904/4905 (source policy)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4906\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аудит и политики",
@@ -1357,7 +1424,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4907 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Object_Type IN (\"Key\",\"File\")\n| table _time, host, Subject_User_Name, Object_Name, Old_SACL, New_SACL",
-    "Корреляции": "4715 (аналог в W2K3)\n4670 (DACL change)\n4663 (фактический доступ к объекту)"
+    "Корреляции": "4715 (аналог в W2K3)\n4670 (DACL change)\n4663 (фактический доступ к объекту)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4907\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "RDP (RemoteConnectionManager)",
@@ -1377,7 +1445,8 @@
     "Причины блокировки": "Правила брандмауэра Windows или сетевого экрана, блокирующие порт 3389/TCP.",
     "Ключевые привилегии": "Не требуются (доступность порта)",
     "SPL-шаблон": "index=winevent* source=\"*TerminalServices-RemoteConnectionManager*\" EventCode=261 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by Source_Network_Address\n| where count>20",
-    "Корреляции": "1149 (успешная аутентификация)\n4624 LogonType=10\n140 (RDP Client side)"
+    "Корреляции": "1149 (успешная аутентификация)\n4624 LogonType=10\n140 (RDP Client side)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational\" and EventID == 261\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "RDP (RemoteConnectionManager)",
@@ -1397,7 +1466,8 @@
     "Причины блокировки": "Групповая политика, отключающая службу \"Удаленный рабочий стол\" (Terminal Services).",
     "Ключевые привилегии": "SeServiceLogonRight",
     "SPL-шаблон": "index=winevent* source=\"*TerminalServices-RemoteConnectionManager*\" EventCode=258 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```",
-    "Корреляции": "1149 (аутентификация)\n261 (listener started)"
+    "Корреляции": "1149 (аутентификация)\n261 (listener started)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational\" and EventID == 258\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "RDP (RemoteConnectionManager)",
@@ -1417,7 +1487,8 @@
     "Причины блокировки": "Неприменимо",
     "Ключевые привилегии": "Неприменимо",
     "SPL-шаблон": "index=winevent* source=\"*TerminalServices-RemoteConnectionManager*\" EventCode=263 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```",
-    "Корреляции": "Служебное событие RDP — без прямых корреляций для SOC"
+    "Корреляции": "Служебное событие RDP — без прямых корреляций для SOC",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational\" and EventID == 263\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "RDP (RemoteConnectionManager)",
@@ -1437,7 +1508,8 @@
     "Причины блокировки": "Неприменимо",
     "Ключевые привилегии": "Неприменимо",
     "SPL-шаблон": "index=winevent* source=\"*TerminalServices-LocalSessionManager*\" EventCode=1155 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```",
-    "Корреляции": "Служебное событие (оптимизация GPU) — без корреляций"
+    "Корреляции": "Служебное событие (оптимизация GPU) — без корреляций",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational\" and EventID == 1155\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "RDP (RemoteConnectionManager)",
@@ -1457,7 +1529,8 @@
     "Причины блокировки": "Неприменимо",
     "Ключевые привилегии": "Неприменимо",
     "SPL-шаблон": "index=winevent* source=\"*RemoteDesktopServices*\" EventCode=20523 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```",
-    "Корреляции": "Информационное событие RDS — без SOC-корреляций"
+    "Корреляции": "Информационное событие RDS — без SOC-корреляций",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational\" and EventID == 20523\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "RDP (RemoteConnectionManager)",
@@ -1477,7 +1550,8 @@
     "Причины блокировки": "Групповая политика, применяющая другое значение.",
     "Ключевые привилегии": "Права администратора для изменения политики",
     "SPL-шаблон": "index=winevent* source=\"*RemoteDesktopServices-RemoteFX*\" EventCode=1143 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```",
-    "Корреляции": "Информационное событие RemoteFX"
+    "Корреляции": "Информационное событие RemoteFX",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational\" and EventID == 1143\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "RDP (RemoteConnectionManager)",
@@ -1497,7 +1571,8 @@
     "Причины блокировки": "Отсутствие необходимого компонента Windows.",
     "Ключевые привилегии": "Права на установку ролей Windows",
     "SPL-шаблон": "index=winevent* source=\"*RemoteDesktopServices-RdpCoreTS*\" EventCode=1136 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```",
-    "Корреляции": "Ошибка конфигурации RDS — диагностика, не SOC"
+    "Корреляции": "Ошибка конфигурации RDS — диагностика, не SOC",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational\" and EventID == 1136\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Система → Расширение безопасности системы",
@@ -1517,7 +1592,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4611 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT Logon_Process_Name IN (\"User32\",\"Advapi  \",\"IKE\",\"Schannel\",\"Negotiat\",\"Kerberos\",\"NTLM\\u0020\\u0020\\u0020\\u0020\")\n| table _time, host, Logon_Process_Name, Subject_User_Name",
-    "Корреляции": "4624 (вход, выполненный этим процессом)\n4697/7045 (установка службы)\n4688 (вызвавший процесс)"
+    "Корреляции": "4624 (вход, выполненный этим процессом)\n4697/7045 (установка службы)\n4688 (вызвавший процесс)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4611\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам → События приложений",
@@ -1537,7 +1613,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4665 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Application_Name",
-    "Корреляции": "4674 (использование привилегии)\n4688 (процесс Authorization Manager)"
+    "Корреляции": "4674 (использование привилегии)\n4688 (процесс Authorization Manager)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4665\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам → Операции с дескрипторами",
@@ -1557,7 +1634,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4690 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Source_Process_Name!=Target_Process_Name\n| table _time, host, Source_Process_Name, Target_Process_Name, Subject_User_Name",
-    "Корреляции": "4688 (оба процесса)\n4656/4663 (доступ к процессу)\n4696 (присвоение token)\nSysmon 10 (process accessed)"
+    "Корреляции": "4688 (оба процесса)\n4656/4663 (доступ к процессу)\n4696 (присвоение token)\nSysmon 10 (process accessed)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4690\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Отслеживание процессов → Создание процесса",
@@ -1577,7 +1655,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4696 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT (Subject_User_Name=\"SYSTEM\" Target_User_Name=\"SYSTEM\")\n| table _time, host, Subject_User_Name, Target_Process_Name, New_Token_Information",
-    "Корреляции": "4624 LogonType=9 (NewCredentials)\n4648 (explicit creds)\n4688 (runas, psexec)"
+    "Корреляции": "4624 LogonType=9 (NewCredentials)\n4648 (explicit creds)\n4688 (runas, psexec)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4696\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учётными записями → Учётные записи пользователей",
@@ -1597,7 +1676,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4723 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` \n  Subject_User_Name!=Target_User_Name\n| table _time, host, Subject_User_Name, Target_User_Name, Status",
-    "Корреляции": "4724 (сброс пароля админом — отличать)\n4625 (до смены)\n4624 (после смены)"
+    "Корреляции": "4724 (сброс пароля админом — отличать)\n4625 (до смены)\n4624 (после смены)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4723\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам → Службы сертификации",
@@ -1617,7 +1697,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4897 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Loaded_Templates",
-    "Корреляции": "4899 (изменение конфигурации CA)\n4886 (получение сертификата)\nADCS attacks — выдача сертификатов (4886/4887)"
+    "Корреляции": "4899 (изменение конфигурации CA)\n4886 (получение сертификата)\nADCS attacks — выдача сертификатов (4886/4887)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4897\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Вход/выход → Вход",
@@ -1637,7 +1718,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4626 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count values(User_Claims) AS uc by Subject_User_Name, host\n| where count>50",
-    "Корреляции": "4624 (вход по Logon_ID)\n4627 (членство в группах того же входа)"
+    "Корреляции": "4624 (вход по Logon_ID)\n4627 (членство в группах того же входа)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4626\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Вход/выход → Членство в группах",
@@ -1657,7 +1739,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4627 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` \n  Group_Membership=\"*S-1-5-32-544*\" OR Group_Membership=\"*Domain Admins*\"\n| table _time, host, Subject_User_Name, Logon_ID, Group_Membership",
-    "Корреляции": "4624 (вход, парный по Logon_ID)\n4672 (выдача привилегий)"
+    "Корреляции": "4624 (вход, парный по Logon_ID)\n4672 (выдача привилегий)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4627\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Использование привилегий → Чувствительные привилегии",
@@ -1677,7 +1760,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeDebugPrivilege, SeBackupPrivilege, SeRestorePrivilege, SeTcbPrivilege, SeLoadDriverPrivilege, SeTakeOwnershipPrivilege — одна или несколько из чувствительных привилегий",
     "SPL-шаблон": "index=winevent* EventCode=4674 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Privileges IN (\"SeDebugPrivilege\",\"SeBackupPrivilege\",\"SeRestorePrivilege\",\"SeTcbPrivilege\")\n  NOT Subject_User_Name=\"SYSTEM\"\n| stats count by Subject_User_Name, Process_Name, Privileges",
-    "Корреляции": "4672 (привилегированный вход)\n4673 (использование привилегии)\n4703 (token privileges adjusted)\n4688 (процесс, использующий привилегию)"
+    "Корреляции": "4672 (привилегированный вход)\n4673 (использование привилегии)\n4703 (token privileges adjusted)\n4688 (процесс, использующий привилегию)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4674\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Изменение политики → Политика аутентификации",
@@ -1697,7 +1781,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege — назначение прав входа",
     "SPL-шаблон": "index=winevent* EventCode=4717 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Access_Right IN (\"SeRemoteInteractiveLogonRight\",\"SeServiceLogonRight\")\n| table _time, host, Subject_User_Name, Target_Account, Access_Right",
-    "Корреляции": "4718 (отзыв прав)\n4704 (назначение привилегий — более широко)\n4624 LogonType из новых прав"
+    "Корреляции": "4718 (отзыв прав)\n4704 (назначение привилегий — более широко)\n4624 LogonType из новых прав",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4717\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Изменение политики → Политика аутентификации",
@@ -1717,7 +1802,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege — отзыв прав входа",
     "SPL-шаблон": "index=winevent* EventCode=4718 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Target_Account, Access_Right",
-    "Корреляции": "4717 (назначение прав — парное)\n4625 с 0xC0000070 (отказ входа после отзыва)\n4738 (изменение учётки)"
+    "Корреляции": "4717 (назначение прав — парное)\n4625 с 0xC0000070 (отказ входа после отзыва)\n4738 (изменение учётки)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4718\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учётными записями → Группы безопасности",
@@ -1737,7 +1823,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege — управление локальными группами",
     "SPL-шаблон": "index=winevent* EventCode=4733 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` Target_Group_Name=\"Administrators\"\n| table _time, host, Subject_User_Name, Member_Name, Group_Name",
-    "Корреляции": "4732 (добавление)\n4729 (удаление из глобальной)\n4726 (удаление учётки)"
+    "Корреляции": "4732 (добавление)\n4729 (удаление из глобальной)\n4726 (удаление учётки)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4733\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учётными записями → Учётные записи компьютеров",
@@ -1757,7 +1844,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeMachineAccountPrivilege — создание учётных записей компьютеров",
     "SPL-шаблон": "index=winevent* EventCode=4741 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT Subject_User_Name=\"*$\"\n| table _time, host, Subject_User_Name, New_Computer_Account, SAM_Account_Name",
-    "Корреляции": "4743 (удаление)\n4742 (изменение)\n5136 (изменение atributes computer object — RBCD attack)"
+    "Корреляции": "4743 (удаление)\n4742 (изменение)\n5136 (изменение atributes computer object — RBCD attack)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4741\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учётными записями → Учётные записи компьютеров",
@@ -1777,7 +1865,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeMachineAccountPrivilege, SeSecurityPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4743 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Target_Account_Name",
-    "Корреляции": "4741 (создание)\n4742 (последнее изменение перед удалением)"
+    "Корреляции": "4741 (создание)\n4742 (последнее изменение перед удалением)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4743\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учётными записями → Учётные записи пользователей",
@@ -1797,7 +1886,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeRestorePrivilege — смена пароля DSRM (выполняется через ntdsutil)",
     "SPL-шаблон": "index=winevent* EventCode=4794 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Workstation, Status",
-    "Корреляции": "4688 (ntdsutil.exe)\n4624 LogonType=2/10 на КД\n1102 сразу после 4794"
+    "Корреляции": "4688 (ntdsutil.exe)\n4624 LogonType=2/10 на КД\n1102 сразу после 4794",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4794\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Отслеживание процессов → RPC",
@@ -1817,7 +1907,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4816 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by Client_Address, SecurityError\n| where count>100",
-    "Корреляции": "5156/5157 (сетевые события)\nСистемные события System log (DistributedCOM)"
+    "Корреляции": "5156/5157 (сетевые события)\nСистемные события System log (DistributedCOM)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4816\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Журнал событий → Обработка событий",
@@ -1837,7 +1928,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=1101 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats sum(Dropped_Events) AS total_dropped by host",
-    "Корреляции": "1104 (переполнение)\n1108 (ошибка EventLog)\n104 (System log clear)"
+    "Корреляции": "1104 (переполнение)\n1108 (ошибка EventLog)\n104 (System log clear)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 1101\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Журнал событий → Обработка событий",
@@ -1857,7 +1949,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=1104 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Channel",
-    "Корреляции": "1101 (dropped events)\n1102 (очистка)\n1105 (авто-бэкап)"
+    "Корреляции": "1101 (dropped events)\n1102 (очистка)\n1105 (авто-бэкап)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 1104\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Журнал событий → Автоматическое резервное копирование",
@@ -1877,7 +1970,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=1105 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Backup_Path, Channel",
-    "Корреляции": "1104 (переполнение)\n1101 (dropped events)"
+    "Корреляции": "1104 (переполнение)\n1101 (dropped events)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 1105\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Журнал событий → Обработка событий",
@@ -1897,7 +1991,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=1108 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by host, Error_Code",
-    "Корреляции": "1100 (служба журнала остановлена)\n1102 (очистка)\n6281 (Code Integrity)"
+    "Корреляции": "1100 (служба журнала остановлена)\n1102 (очистка)\n6281 (Code Integrity)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 1108\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Система → Изменение состояния безопасности",
@@ -1917,7 +2012,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4609 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, _time",
-    "Корреляции": "4608 (запуск Windows)\n6005/6006 (Event Log started/stopped — System log)\n6008 (unexpected shutdown)"
+    "Корреляции": "4608 (запуск Windows)\n6005/6006 (Event Log started/stopped — System log)\n6008 (unexpected shutdown)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4609\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Вход/выход → Выход",
@@ -1937,7 +2033,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": null,
     "SPL-шаблон": "index=winevent* EventCode=4647 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats min(_time) AS start by Target_Logon_ID\n| join Target_Logon_ID [search EventCode=4624 | stats min(_time) AS logon by Target_Logon_ID]\n| eval duration=start-logon",
-    "Корреляции": "4624 (вход по Logon_ID)\n4634 (автоматический logoff)\n4779 (RDP disconnect)"
+    "Корреляции": "4624 (вход по Logon_ID)\n4634 (автоматический logoff)\n4779 (RDP disconnect)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4647\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам → Прочий доступ к объектам",
@@ -1957,7 +2054,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege или владелец задачи",
     "SPL-шаблон": "index=winevent* EventCode=4700 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT Subject_User_Name=\"SYSTEM\"\n| table _time, host, Subject_User_Name, Task_Name",
-    "Корреляции": "4701 (отключение)\n4698 (создание задачи)\n4702 (изменение)"
+    "Корреляции": "4701 (отключение)\n4698 (создание задачи)\n4702 (изменение)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4700\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам → Прочий доступ к объектам",
@@ -1977,7 +2075,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeSecurityPrivilege или владелец задачи",
     "SPL-шаблон": "index=winevent* EventCode=4701 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Task_Name IN (\"*\\\\Microsoft\\\\Windows\\\\Defender\\\\*\",\"*\\\\Microsoft\\\\Windows\\\\Backup\\\\*\",\"*EDR*\")\n| table _time, host, Subject_User_Name, Task_Name",
-    "Корреляции": "4700 (включение)\n4699 (удаление)\n4688 (schtasks.exe /Change /DISABLE)"
+    "Корреляции": "4700 (включение)\n4699 (удаление)\n4688 (schtasks.exe /Change /DISABLE)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4701\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Изменение политики → Политика аудита",
@@ -1997,7 +2096,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "SeAuditPrivilege",
     "SPL-шаблон": "index=winevent* EventCode=4902 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by host, _time\n| where count>1",
-    "Корреляции": "4904/4905 (registration source)\n4719 (audit policy change)\n4612 (per-user audit policy table)"
+    "Корреляции": "4904/4905 (registration source)\n4719 (audit policy change)\n4612 (per-user audit policy table)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4902\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учетными записями",
@@ -2017,7 +2117,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4742 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  AllowedToDelegateTo=* OR msDS_AllowedToActOnBehalfOfOtherIdentity=*\n| table _time, host, SubjectUserName, TargetUserName, AllowedToDelegateTo",
-    "Корреляции": "4624 LT=3 (вход перед изменением)\n4662 (DCShadow)\n4769 (S4U после RBCD)\n4741/4743 (создание/удаление computer)"
+    "Корреляции": "4624 LT=3 (вход перед изменением)\n4662 (DCShadow)\n4769 (S4U после RBCD)\n4741/4743 (создание/удаление computer)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4742\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -2037,7 +2138,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4756 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  TargetUserName IN (\"\"Enterprise Admins\"\",\"\"Schema Admins\"\")\n| table _time, host, SubjectUserName, MemberName, TargetUserName",
-    "Корреляции": "4720 (создание учётки перед)\n4728/4732 (другие привил. группы)\n4624 (вход инициатора)"
+    "Корреляции": "4720 (создание учётки перед)\n4728/4732 (другие привил. группы)\n4624 (вход инициатора)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4756\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -2057,7 +2159,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` EventCode IN (4727,4731,4734)\n| table _time, host, SubjectUserName, TargetUserName, EventCode",
-    "Корреляции": "4728/4756 (добавление членов)\n4731 (локальная группа)\n4734 (удаление группы)"
+    "Корреляции": "4728/4756 (добавление членов)\n4731 (локальная группа)\n4734 (удаление группы)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4727\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -2077,7 +2180,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4731 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, SubjectUserName, TargetUserName",
-    "Корреляции": "4732 (добавление членов)\n4734 (удаление группы)\n4727 (глобальная группа)"
+    "Корреляции": "4732 (добавление членов)\n4734 (удаление группы)\n4727 (глобальная группа)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4731\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -2097,7 +2201,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4734 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, SubjectUserName, TargetUserName",
-    "Корреляции": "4731 (создание группы)\n4733 (удаление члена)\n1102 (очистка журнала)"
+    "Корреляции": "4731 (создание группы)\n4733 (удаление члена)\n1102 (очистка журнала)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4734\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2117,7 +2222,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"\"*Windows Defender/Operational*\"\" EventCode=1116 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by host, Threat_Name, Path, Severity\n| sort -count",
-    "Корреляции": "1117 (действие предпринято)\n5001 (защита отключена)\n4688 (процесс угрозы)"
+    "Корреляции": "1117 (действие предпринято)\n5001 (защита отключена)\n4688 (процесс угрозы)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 1116\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2137,7 +2243,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"\"*Windows Defender/Operational*\"\" EventCode=1117 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Action_Result!=\"\"Succeeded\"\"\n| table _time, host, Threat_Name, Action, Action_Result, Path",
-    "Корреляции": "1116 (обнаружение)\n5007 (изменение конфига)\n4688 (процесс угрозы)"
+    "Корреляции": "1116 (обнаружение)\n5007 (изменение конфига)\n4688 (процесс угрозы)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 1117\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2157,7 +2264,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ``` source=\"\"*Windows Defender/Operational*\"\" EventCode IN (5001,5007,5010,5012)\n| table _time, host, EventCode, Old_Value, New_Value",
-    "Корреляции": "5007 (изменение конфига)\n1116/1117 (детекты после отключения)\n4688 (powershell Set-MpPreference)\n4657 (реестр DisableAntiSpyware)"
+    "Корреляции": "5007 (изменение конфига)\n1116/1117 (детекты после отключения)\n4688 (powershell Set-MpPreference)\n4657 (реестр DisableAntiSpyware)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 5001\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2177,7 +2285,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"\"*Windows Defender/Operational*\"\" EventCode=5007 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  New_Value=\"\"*Exclusions*\"\"\n| table _time, host, Old_Value, New_Value",
-    "Корреляции": "5001 (защита отключена)\n4657 (реестр Defender)\n4688 (powershell Add-MpPreference)\n4104 (скрипт с Set-MpPreference)"
+    "Корреляции": "5001 (защита отключена)\n4657 (реестр Defender)\n4688 (powershell Add-MpPreference)\n4104 (скрипт с Set-MpPreference)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 5007\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Службы (System)",
@@ -2197,7 +2306,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* sourcetype=\"\"WinEventLog:System\"\" EventCode=7034 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Service_Name IN (\"\"Sense\"\",\"\"WinDefend\"\",\"\"Sysmon*\"\",\"\"MsSecFlt\"\")\n| stats count by host, Service_Name",
-    "Корреляции": "7036 (изменение состояния)\n7040 (изменение типа запуска)\n4 (Sysmon service state)"
+    "Корреляции": "7036 (изменение состояния)\n7040 (изменение типа запуска)\n4 (Sysmon service state)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"System\" and EventID == 7034\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Службы (System)",
@@ -2217,7 +2327,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* sourcetype=\"\"WinEventLog:System\"\" EventCode=7036 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Service_Name IN (\"\"Windows Defender*\"\",\"\"Sysmon*\"\",\"\"Windows Event Log\"\")\n  State=\"\"stopped\"\"\n| table _time, host, Service_Name, State",
-    "Корреляции": "7034 (аварийное завершение)\n7040 (изменение типа запуска)\n1100 (остановка журналирования)"
+    "Корреляции": "7034 (аварийное завершение)\n7040 (изменение типа запуска)\n1100 (остановка журналирования)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"System\" and EventID == 7036\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Службы (System)",
@@ -2237,7 +2348,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* sourcetype=\"\"WinEventLog:System\"\" EventCode=7040 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  Service_Name IN (\"\"Windows Defender*\"\",\"\"Sense\"\",\"\"Sysmon*\"\")\n| table _time, host, Service_Name, Start_Type",
-    "Корреляции": "7036 (изменение состояния)\n7034 (аварийное завершение)\n4657 (реестр Start службы)"
+    "Корреляции": "7036 (изменение состояния)\n7034 (аварийное завершение)\n4657 (реестр Start службы)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"System\" and EventID == 7040\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Системные события",
@@ -2257,7 +2369,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=1100 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| join type=outer host [search EventCode=4608]\n| where isnull(EventCode_4608)\n| table _time, host",
-    "Корреляции": "1102 (очистка журнала)\n4609 (завершение работы)\n7036 (EventLog service stopped)"
+    "Корреляции": "1102 (очистка журнала)\n4609 (завершение работы)\n7036 (EventLog service stopped)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 1100\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление учётными записями",
@@ -2277,7 +2390,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4781 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Old_Account_Name, New_Account_Name",
-    "Корреляции": "4720 (создание учётки)\n4738 (изменение учётки)\n4724 (сброс пароля)"
+    "Корреляции": "4720 (создание учётки)\n4738 (изменение учётки)\n4724 (сброс пароля)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4781\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Управление группами",
@@ -2297,7 +2411,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4764 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Group_Name",
-    "Корреляции": "4728/4732 (добавление в группу)\n4735 (изменение лок. группы)"
+    "Корреляции": "4728/4732 (добавление в группу)\n4735 (изменение лок. группы)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4764\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Изменение политики",
@@ -2317,7 +2432,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4739 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Domain_Policy_Changed",
-    "Корреляции": "4713 (политика Kerberos)\n4719 (политика аудита)\n4704 (назначение прав)"
+    "Корреляции": "4713 (политика Kerberos)\n4719 (политика аудита)\n4704 (назначение прав)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4739\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Изменение политики",
@@ -2337,7 +2453,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4713 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name",
-    "Корреляции": "4739 (доменная политика)\n4769 (запрос TGS)\n4768 (запрос TGT)"
+    "Корреляции": "4739 (доменная политика)\n4769 (запрос TGS)\n4768 (запрос TGT)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4713\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Изменение политики",
@@ -2357,7 +2474,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4706 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Domain_Name, Trust_Direction, Trust_Type",
-    "Корреляции": "4707 (удаление trust)\n4716 (изменение trust)\n4662 (DCSync через trust)"
+    "Корреляции": "4707 (удаление trust)\n4716 (изменение trust)\n4662 (DCSync через trust)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4706\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Изменение политики",
@@ -2377,7 +2495,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4707 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Subject_User_Name, Domain_Name",
-    "Корреляции": "4706 (создание trust)\n4716 (изменение trust)"
+    "Корреляции": "4706 (создание trust)\n4716 (изменение trust)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4707\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -2397,7 +2516,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* EventCode=4649 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Account_Name, Target_Server",
-    "Корреляции": "4769 (запрос TGS)\n4768 (запрос TGT)\n4624 LT=3 (сетевой вход)"
+    "Корреляции": "4769 (запрос TGS)\n4768 (запрос TGT)\n4624 LT=3 (сетевой вход)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4649\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2417,7 +2537,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=1118 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Threat_Name, Path",
-    "Корреляции": "1119 (результат удаления)\n1116/1117 (детект+action)"
+    "Корреляции": "1119 (результат удаления)\n1116/1117 (детект+action)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 1118\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2437,7 +2558,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=1119 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Threat_Name, Error_Code, Path",
-    "Корреляции": "1118 (попытка удаления)\n1116 (детект)\n1117 (action)"
+    "Корреляции": "1118 (попытка удаления)\n1116 (детект)\n1117 (action)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 1119\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2457,7 +2579,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=5010 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, Process_Name",
-    "Корреляции": "5012 (RTP scanning off)\n5001 (RTP off)\n5007 (config)"
+    "Корреляции": "5012 (RTP scanning off)\n5001 (RTP off)\n5007 (config)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 5010\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2477,7 +2600,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=1006 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Threat_Name, Path, Severity",
-    "Корреляции": "1116/1117 (детект+action)\n1015 (подозрительное поведение)"
+    "Корреляции": "1116/1117 (детект+action)\n1015 (подозрительное поведение)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 1006\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2497,7 +2621,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=5012 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, Process_Name",
-    "Корреляции": "5010 (scan off)\n5001 (RTP off)\n5007 (config)\n4104 (Set-MpPreference)"
+    "Корреляции": "5010 (scan off)\n5001 (RTP off)\n5007 (config)\n4104 (Set-MpPreference)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 5012\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2517,7 +2642,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=1015 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Threat_Name, Path, Process_Name, Severity",
-    "Корреляции": "1116/1117 (детект+action)\n1006 (движок)\n4688 / Sysmon 1 (процесс)"
+    "Корреляции": "1116/1117 (детект+action)\n1006 (движок)\n4688 / Sysmon 1 (процесс)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 1015\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2537,7 +2663,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=1009 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Threat_Name, Path, User",
-    "Корреляции": "1117 (карантин)\n1116 (детект)\n4688 (кто восстановил)"
+    "Корреляции": "1117 (карантин)\n1116 (детект)\n4688 (кто восстановил)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 1009\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2557,7 +2684,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=2051 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Error_Code, Signature_Version",
-    "Корреляции": "2001 (сбой движка)\n5007 (config)\n5001 (RTP off)"
+    "Корреляции": "2001 (сбой движка)\n5007 (config)\n5001 (RTP off)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 2051\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2577,7 +2705,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=5004 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Feature_Name, State, Process_Name, User",
-    "Корреляции": "5001 (RTP off)\n5007 (config)\n4104 (PowerShell ScriptBlock)\nSysmon 13 (registry)"
+    "Корреляции": "5001 (RTP off)\n5007 (config)\n4104 (PowerShell ScriptBlock)\nSysmon 13 (registry)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 5004\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2597,7 +2726,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=5008 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Error_Code, Engine_Version",
-    "Корреляции": "2001 (сбой обновления)\n5001 (RTP off)\n7034/7036 (служба)\nSysmon 5 (process term)"
+    "Корреляции": "2001 (сбой обновления)\n5001 (RTP off)\n7034/7036 (служба)\nSysmon 5 (process term)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 5008\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Антивирус (Defender)",
@@ -2617,7 +2747,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Windows Defender/Operational*\" EventCode=1013 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, Process_Name",
-    "Корреляции": "1102 (очистка Security)\n104 (очистка логов)\n5001 (RTP off)\nSysmon 23 (file delete)"
+    "Корреляции": "1102 (очистка Security)\n104 (очистка логов)\n5001 (RTP off)\nSysmon 23 (file delete)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Windows Defender/Operational\" and EventID == 1013\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Службы (System)",
@@ -2637,7 +2768,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"WinEventLog:System\" EventCode=7045 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  (Service_File_Name=\"*\\\\Temp\\\\*\" OR Service_File_Name=\"*PSEXESVC*\" OR Service_File_Name=\"*powershell*\")\n| table _time, host, Service_Name, Service_File_Name, Service_Start_Type",
-    "Корреляции": "4697 (установка службы в Security)\n4624 LT=3 (сетевой вход PsExec)\n4688 (процесс)\nSysmon 1"
+    "Корреляции": "4697 (установка службы в Security)\n4624 LT=3 (сетевой вход PsExec)\n4688 (процесс)\nSysmon 1",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"System\" and EventID == 7045\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "WMI / Удалённое выполнение",
@@ -2657,7 +2789,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*WMI-Activity/Operational*\" EventCode=5861 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, Consumer, Query",
-    "Корреляции": "5857/5858/5860 (WMI provider/операции)\n4688 (wmiprvse.exe)\nSysmon 19/20/21 (WmiEvent)"
+    "Корреляции": "5857/5858/5860 (WMI provider/операции)\n4688 (wmiprvse.exe)\nSysmon 19/20/21 (WmiEvent)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-WMI-Activity/Operational\" and EventID == 5861\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "WMI / Удалённое выполнение",
@@ -2677,7 +2810,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*WMI-Activity/Operational*\" EventCode=5857 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, ProviderName, Path",
-    "Корреляции": "5861 (consumer registration)\n4688 (wmiprvse.exe → child)\n4624 LT=3 (сетевой вход)"
+    "Корреляции": "5861 (consumer registration)\n4688 (wmiprvse.exe → child)\n4624 LT=3 (сетевой вход)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-WMI-Activity/Operational\" and EventID == 5857\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "WMI / Удалённое выполнение",
@@ -2697,7 +2831,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*WinRM/Operational*\" EventCode=91 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, fqdn",
-    "Корреляции": "4104 (PowerShell ScriptBlock)\n4624 LT=3 (сетевой вход)\n4688 (wsmprovhost.exe)"
+    "Корреляции": "4104 (PowerShell ScriptBlock)\n4624 LT=3 (сетевой вход)\n4688 (wsmprovhost.exe)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-WinRM/Operational\" and EventID == 91\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "WMI / Удалённое выполнение",
@@ -2717,7 +2852,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*WinRM/Operational*\" EventCode=168 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, User, Authentication",
-    "Корреляции": "91 (создание shell)\n4624 LT=3\n4104 (PowerShell)"
+    "Корреляции": "91 (создание shell)\n4624 LT=3\n4104 (PowerShell)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-WinRM/Operational\" and EventID == 168\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "BITS / Загрузка",
@@ -2737,7 +2873,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*Bits-Client/Operational*\" EventCode=59 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  NOT url=\"*windowsupdate.com*\" NOT url=\"*microsoft.com*\"\n| table _time, host, url, name, User",
-    "Корреляции": "4688 (bitsadmin.exe / powershell)\n4104 (Start-BitsTransfer)\nSysmon 3 (network)\nSysmon 11 (file create)"
+    "Корреляции": "4688 (bitsadmin.exe / powershell)\n4104 (Start-BitsTransfer)\nSysmon 3 (network)\nSysmon 11 (file create)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-Bits-Client/Operational\" and EventID == 59\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "AppLocker / WDAC",
@@ -2757,7 +2894,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*AppLocker*\" EventCode=8004 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by host, User, FilePath\n| sort -count",
-    "Корреляции": "8003 (audit-режим)\n4688 (попытка запуска)\nSysmon 1"
+    "Корреляции": "8003 (audit-режим)\n4688 (попытка запуска)\nSysmon 1",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-AppLocker/EXE and DLL\" and EventID == 8004\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "AppLocker / WDAC",
@@ -2777,7 +2915,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*AppLocker*\" EventCode=8003 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by host, User, FilePath\n| sort -count",
-    "Корреляции": "8004 (enforce-блокировка)\n4688 (запуск)\nSysmon 1"
+    "Корреляции": "8004 (enforce-блокировка)\n4688 (запуск)\nSysmon 1",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-AppLocker/EXE and DLL\" and EventID == 8003\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "AppLocker / WDAC",
@@ -2797,7 +2936,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*CodeIntegrity/Operational*\" EventCode=3077 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, File_Name, Process_Name",
-    "Корреляции": "3076 (audit-режим)\n4688 (запуск)\n7045 (установка драйвера/службы)\nSysmon 6 (driver load)"
+    "Корреляции": "3076 (audit-режим)\n4688 (запуск)\n7045 (установка драйвера/службы)\nSysmon 6 (driver load)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-CodeIntegrity/Operational\" and EventID == 3077\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "AppLocker / WDAC",
@@ -2817,7 +2957,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"*CodeIntegrity/Operational*\" EventCode=3076 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, File_Name, Process_Name",
-    "Корреляции": "3077 (enforce-блокировка)\n4688 (запуск)\nSysmon 6 (driver load)"
+    "Корреляции": "3077 (enforce-блокировка)\n4688 (запуск)\nSysmon 6 (driver load)",
+    "KQL-шаблон": "WindowsEvent\n| where Channel == \"Microsoft-Windows-CodeIntegrity/Operational\" and EventID == 3076\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация",
@@ -2837,7 +2978,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"WinEventLog:Security\" EventCode=4964 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| table _time, host, Account_Name, New_Logon_Security_ID",
-    "Корреляции": "4624 (вход)\n4672 (привилегированный вход)\n4768 (TGT)"
+    "Корреляции": "4624 (вход)\n4672 (привилегированный вход)\n4768 (TGT)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4964\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Аутентификация / Credentials",
@@ -2857,7 +2999,8 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"WinEventLog:Security\" EventCode=5379 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n  (Process_Name=\"*powershell*\" OR Process_Name=\"*cmd*\" OR Process_Name=\"*rundll32*\")\n| stats count by host, Subject_Account_Name, Process_Name",
-    "Корреляции": "4688 (процесс-читатель)\n4624 LT=2/10 (вход/RDP)\nSysmon 10 (доступ к процессу)"
+    "Корреляции": "4688 (процесс-читатель)\n4624 LT=2/10 (вход/RDP)\nSysmon 10 (доступ к процессу)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 5379\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   },
   {
     "Категория": "Доступ к объектам",
@@ -2877,6 +3020,7 @@
     "Причины блокировки": null,
     "Ключевые привилегии": "—",
     "SPL-шаблон": "index=winevent* source=\"WinEventLog:Security\" EventCode=4985 ``` ЦЕЛЬ (опц.): host=\"ВАШ_ХОСТ\" Account_Name=\"ПОЛЬЗОВАТЕЛЬ\" ```\n| stats count by host, Process_Name\n| where count>100",
-    "Корреляции": "4688 (запуск процесса)\nSysmon 1\nSysmon 11 (file create)"
+    "Корреляции": "4688 (запуск процесса)\nSysmon 1\nSysmon 11 (file create)",
+    "KQL-шаблон": "SecurityEvent\n| where EventID == 4985\n// сузьте по цели: | where Computer == \"ВАШ_ХОСТ\"   // или по учётке: TargetAccount / SubjectUserName"
   }
 ]

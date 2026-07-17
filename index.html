@@ -346,7 +346,7 @@
     records.push({src:'Windows',id:id,title:v(r['Название события']),cat:v(r['Категория']),groups:g,
       log:v(r['Лог']),sev:v(r['Важность']),freq:v(r['Частота']),desc:v(r['Описание']),details:v(r['Подробности']),
       ioc:v(r['Индикаторы атаки']),fp:v(r['False Positive (легитимные срабатывания)']),mitre:v(r['MITRE TTP']),
-      scen:v(r['Типичные сценарии']),fields:v(r['Ключевые поля']),spl:v(r['SPL-шаблон']),corr:v(r['Корреляции']),
+      scen:v(r['Типичные сценарии']),fields:v(r['Ключевые поля']),spl:v(r['SPL-шаблон']),kql:v(r['KQL-шаблон']),corr:v(r['Корреляции']),
       doc:v(r['Документация для данного EventCode'])});
   });
   (D['8)Sysmon']||[]).forEach(function(r){
@@ -354,7 +354,7 @@
     records.push({src:'Sysmon',id:'Sysmon '+v(r['ID']),title:v(r['Название события']),cat:v(r['Категория']),
       groups:[v(r['Категория'])||'Sysmon'],log:v(r['Лог']),sev:v(r['Важность']),freq:v(r['Частота']),desc:v(r['Описание']),
       ioc:v(r['Индикаторы атаки']),mitre:v(r['MITRE ATT&CK']),scen:v(r['Типичные сценарии']),fields:v(r['Поля события']),
-      spl:v(r['SPL-шаблон']),corr:v(r['Корреляции']),doc:v(r['Документация'])});
+      spl:v(r['SPL-шаблон']),kql:v(r['KQL-шаблон']),corr:v(r['Корреляции']),doc:v(r['Документация'])});
   });
   (D['LINUX']||[]).forEach(function(r){
     if(!v(r['Название события'])) return;
@@ -400,7 +400,7 @@
   // ---- индексы ----
   var mitreRe=/T\d{4}(?:\.\d{3})?|TA\d{4}/g, mitreSet={};
   records.forEach(function(r){
-    r._blob=[r.id,r.title,r.cat,r.log,r.desc,r.details,r.ioc,r.fp,r.mitre,r.scen,r.fields,r.spl,r.corr,r.cli,r.proc,r.eventids,r.patterns,r.d3fend,r.capabilities,r.dec,r.typical,r.soc,r.reco,r.ltsource,r.example,r.stepstext,r.summary,r.chain,(r.groups||[]).join(' ')].join(' ').toLowerCase();
+    r._blob=[r.id,r.title,r.cat,r.log,r.desc,r.details,r.ioc,r.fp,r.mitre,r.scen,r.fields,r.spl,r.kql,r.corr,r.cli,r.proc,r.eventids,r.patterns,r.d3fend,r.capabilities,r.dec,r.typical,r.soc,r.reco,r.ltsource,r.example,r.stepstext,r.summary,r.chain,(r.groups||[]).join(' ')].join(' ').toLowerCase();
     r._idtok=(r.id||'').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
     r._mitre=[]; var m; while((m=mitreRe.exec(r.mitre||''))!==null){ r._mitre.push(m[0]); mitreSet[m[0]]=(mitreSet[m[0]]||0)+1; } mitreRe.lastIndex=0;
   });
@@ -594,7 +594,8 @@
       fld('','Рекомендации',r.reco)+
       fld('','Типичный источник событий',r.ltsource)+
       fld('','Пример',r.example)+
-      code('SPL-шаблон',r.spl)+
+      code('SPL — Splunk',r.spl)+
+      code('KQL — Sentinel / Defender',r.kql)+
       code('Проверка (CLI / journalctl)',bashify(r.cli))+
       corrField(r.corr)+
       slForEvent(r)+

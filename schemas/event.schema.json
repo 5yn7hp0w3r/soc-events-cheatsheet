@@ -22,6 +22,8 @@
     "Причины блокировки":                         { "type": ["string", "null"] },
     "Ключевые привилегии":                        { "type": ["string", "null"] },
     "SPL-шаблон":                                 { "type": ["string", "null"] },
+    "KQL-шаблон":                                 { "type": ["string", "null"] },
+    "KUMA-шаблон":                                { "type": ["string", "null"] },
     "Корреляции":                                 { "type": ["string", "null"] }
   }
 }
