@@ -145,6 +145,9 @@
   .nf-list{display:flex;flex-wrap:wrap;gap:7px}
   .nf-item{font-family:var(--mono);font-size:13px;background:rgba(255,93,87,.12);border:1px solid rgba(255,93,87,.4);color:#ffb3af;border-radius:7px;padding:3px 9px}
   .nf-cnt{opacity:.65}
+  .cli-label{font-size:13px;color:var(--fg2);margin:11px 0 5px;line-height:1.4}
+  .cli-cmd{margin-bottom:7px}
+  .cli-cmd pre{padding:9px 11px}
   .chip.active[data-val="Attack"]{background:linear-gradient(145deg,#e0403a,#b52e29);border-color:#e0403a;box-shadow:0 3px 14px rgba(255,93,87,.35)}
   .chip.active[data-val="Defense"]{background:linear-gradient(145deg,#2f81f7,#2564d6);border-color:#2f81f7;box-shadow:0 3px 14px rgba(47,129,247,.35)}
   .ctitle{font-size:15.5px;font-weight:650;color:var(--fg);line-height:1.35}
@@ -538,6 +541,22 @@
   function bashify(s){ if(!s) return s;
     return s.split('\n').map(function(l){ return l.replace(/^\s*▸\s?/,'# ').replace(/^\s*\$\s?/,''); }).join('\n'); }
   function corrField(val){ if(!val)return''; return '<div class="field"><h4>Корреляции <span style="color:var(--fg3);text-transform:none;letter-spacing:0">(клик по ID → переход)</span></h4><div class="val corrlinks">'+linkifyEids(val)+'</div></div>'; }
+  // CLI-проверки: подпись (▸) → команда ($) отдельным блоком с кнопкой копировать
+  function cliField(val){
+    if(!val) return '';
+    var blocks=[], cur=null;
+    val.split('\n').forEach(function(l){
+      var t=l.replace(/\s+$/,'');
+      if(/^\s*▸/.test(t)){ cur={label:t.replace(/^\s*▸\s?/,''),cmds:[]}; blocks.push(cur); }
+      else if(/^\s*\$/.test(t)){ if(!cur){cur={label:'',cmds:[]};blocks.push(cur);} cur.cmds.push(t.replace(/^\s*\$\s?/,'')); }
+      else if(t.trim() && cur && cur.cmds.length){ cur.cmds[cur.cmds.length-1]+='\n'+t; }
+    });
+    if(!blocks.length) return code('Проверка (CLI / journalctl)', val);
+    var inner=blocks.map(function(b){
+      return (b.label?'<div class="cli-label">'+hl(b.label)+'</div>':'')+
+        b.cmds.map(function(cmd){return '<div class="codeblk cli-cmd"><button class="copy" data-code="'+esc(cmd)+'">копировать</button><pre>'+hl(cmd)+'</pre></div>';}).join('');
+    }).join('');
+    return '<div class="field"><h4>Проверка (CLI / journalctl)</h4>'+inner+'</div>'; }
   function slForEvent(r){
     if(r.src!=='Windows'&&r.src!=='Sysmon') return '';
     var arr=eid2sl[r.id]||[]; if(!arr.length) return '';
@@ -597,7 +616,7 @@
       code('SPL — Splunk',r.spl)+
       code('KQL — Sentinel / Defender',r.kql)+
       code('KUMA — Kaspersky (SQL)',r.kuma)+
-      code('Проверка (CLI / journalctl)',bashify(r.cli))+
+      cliField(r.cli)+
       corrField(r.corr)+
       slForEvent(r)+
       (r.doc?'<div class="field"><h4>Документация</h4><a class="doc-link" href="'+esc(fixUrl(r.doc))+'" target="_blank" rel="noopener">'+esc(r.doc)+' ↗</a></div>':'')+

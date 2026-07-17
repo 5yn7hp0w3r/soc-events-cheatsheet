@@ -38,7 +38,7 @@
 - **144 события Windows** — полный реестр Event ID с важностью, частотой, IoC и false-positive
 - **События, сгруппированные по функциям** — входы, управление учётками, процессы, аудит доступа, discovery/PowerShell, сеть, RDP, Sysmon, Active Directory, Defender
 - **24 storyline-цепочки** — типовые сценарии атак (brute-force, Kerberoasting, DCSync, Golden/Silver Ticket, фишинг→C2, дамп LSASS, web-shell, Shadow Credentials, PetitPotam/ESC8, ransomware…), каждая разложена по шагам с Event ID и размечена по MITRE ATT&CK
-- **43 события Linux** — auditd / journald / syslog с командами проверки через CLI
+- **57 событий Linux** — auditd / journald / syslog + современные угрозы (reverse shell, fileless memfd, облачные метаданные, PwnKit/DirtyPipe, web-shell, DNS-туннели…) с командами проверки через CLI
 - **45 форензик-артефактов Windows** — где искать следы, чем анализировать, пример применения
 - **264 инструмента** — 74 атакующих (с process names и Event ID) + 190 защитников (EDR/XDR, SIEM, NDR, DFIR, WAF, VM, AppSec, anti-DDoS, IdM + отечественные вендоры: Positive Technologies, SolidLab, Kaspersky, BI.ZONE, Солар, F6, InfoWatch, UserGate…)
 - **Справочники** — LogonType, NTSTATUS-коды ошибок (4625 и полный реестр из 64 кодов)
@@ -84,7 +84,7 @@
 
 | # | Раздел | Событий | Описание |
 |:--:|:--|:--:|:--|
-| 19 | [🐧 LINUX](MD/19_LINUX.md) | 43 | Sysmon for Linux (eBPF), auditd (`EXECVE/SYSCALL`), journald, PAM, SSH, sudo, cron, systemd. IoC, CLI-проверки (`journalctl`/`ausearch`), MITRE, SPL |
+| 19 | [🐧 LINUX](MD/19_LINUX.md) | 57 | auditd/journald/Sysmon-for-Linux + современные угрозы: reverse shell, fileless (memfd), облачные метаданные, PwnKit/DirtyPipe, web-shell, DNS-туннели, supply-chain. IoC, CLI (`ausearch`/`journalctl`), MITRE, SPL |
 
 ## 📦 Форматы данных
 
