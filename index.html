@@ -139,6 +139,12 @@
   .spoiler>summary::before{content:"▸ "}
   .spoiler[open]>summary::before{content:"▾ "}
   .spoiler>.sp-body{padding:2px 12px 11px;font-size:13.5px;color:var(--fg);line-height:1.5}
+  .cnt-badge{font-family:var(--mono);font-size:12px;font-weight:700;background:rgba(232,193,74,.15);color:var(--high);border:1px solid rgba(232,193,74,.5);border-radius:7px;padding:2px 8px}
+  .notfound{margin:16px 0 0;padding:14px 16px;background:rgba(255,93,87,.08);border:1px solid rgba(255,93,87,.35);border-radius:12px}
+  .nf-title{font-size:13px;font-weight:700;color:var(--crit);margin-bottom:9px}
+  .nf-list{display:flex;flex-wrap:wrap;gap:7px}
+  .nf-item{font-family:var(--mono);font-size:13px;background:rgba(255,93,87,.12);border:1px solid rgba(255,93,87,.4);color:#ffb3af;border-radius:7px;padding:3px 9px}
+  .nf-cnt{opacity:.65}
   .chip.active[data-val="Attack"]{background:linear-gradient(145deg,#e0403a,#b52e29);border-color:#e0403a;box-shadow:0 3px 14px rgba(255,93,87,.35)}
   .chip.active[data-val="Defense"]{background:linear-gradient(145deg,#2f81f7,#2564d6);border-color:#2f81f7;box-shadow:0 3px 14px rgba(47,129,247,.35)}
   .ctitle{font-size:15.5px;font-weight:650;color:var(--fg);line-height:1.35}
@@ -206,7 +212,7 @@
   <div class="wrap">
     <div class="search">
       <svg class="ic" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg>
-      <input id="q" type="search" placeholder="Поиск: 4624, 4688, 4625 (сразу несколько ID) · IoC · процесс · T1078 · mimikatz…" autocomplete="off" spellcheck="false">
+      <input id="q" type="search" placeholder="Поиск: 4624, 4688 · со счётчиком 4625(1337) · IoC · процесс · mimikatz…" autocomplete="off" spellcheck="false">
       <kbd>/</kbd>
     </div>
     <div class="filters">
@@ -217,7 +223,7 @@
         <select id="mitreSel"><option value="">Все техники</option></select>
       </div>
       <div class="frow"><span class="flabel">Важность</span><div id="sevChips"></div>
-        <label class="expcb"><input type="checkbox" id="idOnly"> 🎯 по Event ID</label>
+        <label class="expcb"><input type="checkbox" id="byName"> 🔤 по названию</label>
         <label class="expcb"><input type="checkbox" id="expAll"> развернуть все</label>
         <span class="reset" id="copylink">🔗 ссылка</span>
         <span class="reset" id="reset">✕ сбросить фильтры</span>
@@ -229,6 +235,7 @@
 <div class="wrap">
   <div class="meta" id="meta"></div>
   <main><div class="grid" id="grid"></div></main>
+  <div class="notfound" id="notfound" style="display:none"></div>
 </div>
 
 <div class="backtop" id="backtop" title="Наверх">↑</div>
@@ -416,8 +423,10 @@
     '<span class="pill"><span class="dot" style="background:var(--high)"></span><b>'+Object.keys(mitreSet).length+'</b> техник MITRE</span>';
 
   // ---- state ----
-  var state={q:'',src:'',sev:[],cat:'',mitre:'',expand:false,idOnly:false};
+  var state={q:'',src:'',sev:[],cat:'',mitre:'',expand:false,byName:false};
   var sevRu={critical:'Критич.',high:'Высокая',medium:'Средняя',low:'Низкая',info:'Инфо'};
+  var activeCounts={};  // eid -> кол-во из запроса вида 4625(1337)
+  var slByNum={}; storylines.forEach(function(s){slByNum[s.num]=s;});
 
   // источники с счётчиками
   var srcDefs=[['','Все',records.length],['Windows','Windows',counts.Windows],['Sysmon','Sysmon',counts.Sysmon],['Linux','Linux',counts.Linux],['Attack','⚔️ Атака',counts.Attack],['Defense','🛡️ Защита',counts.Defense],['Error','❌ Error-коды',counts.Error],['LogonType','🔑 Logon Types',counts.LogonType],['Storyline','🧩 Цепочки атак',counts.Storyline]];
@@ -476,15 +485,15 @@
     if(e.key==='Escape'){qinput.value='';state.q='';render();qinput.blur();}
   });
   document.getElementById('reset').onclick=function(){
-    state={q:'',src:'',sev:[],cat:'',mitre:'',expand:false,idOnly:false}; qinput.value=''; msel.value='';
+    state={q:'',src:'',sev:[],cat:'',mitre:'',expand:false,byName:false}; qinput.value=''; msel.value='';
     [].forEach.call(srcEl.children,function(x){x.classList.toggle('active',x.dataset.val==='')});
-    syncSevChips(); expAll.checked=false; idOnly.checked=false;
+    syncSevChips(); expAll.checked=false; byName.checked=false;
     buildCats(); render();
   };
   var expAll=document.getElementById('expAll');
   expAll.onchange=function(){ state.expand=expAll.checked; render(); };
-  var idOnly=document.getElementById('idOnly');
-  idOnly.onchange=function(){ state.idOnly=idOnly.checked; render(); };
+  var byName=document.getElementById('byName');
+  byName.onchange=function(){ state.byName=byName.checked; render(); };
   var copylink=document.getElementById('copylink');
   copylink.onclick=function(){
     var url=location.href;
@@ -499,10 +508,16 @@
   function fixUrl(u){u=(u||'').trim();return u&&!/^https?:\/\//i.test(u)?'https://'+u:u;}
   // разбор запроса: "4624, 4688" или "4624 4688 4625" -> список термов (OR); иначе фраза целиком
   // запрос: "4624, 4688"/"4624 4688" -> OR по ID; свободный текст -> AND по словам
-  function parseQuery(q){ q=(q||'').trim(); if(!q) return {terms:[],or:true};
-    if(q.indexOf(',')!==-1) return {terms:q.split(',').map(function(s){return s.trim();}).filter(Boolean), or:true};
-    if(/^[\d\s]+$/.test(q)) return {terms:q.split(/\s+/).filter(Boolean), or:true};
-    return {terms:q.split(/\s+/).filter(Boolean), or:false}; }
+  // режимы: id (числовые Event ID, в т.ч. со счётчиками 4625(1337)) | text (свободный текст)
+  function parseQuery(q){ q=(q||'').trim(); var res={mode:'text',terms:[],or:false,counts:{}};
+    if(!q) return res;
+    var hasCounts=false;
+    q.replace(/(\d{2,5})\s*\(\s*(\d+)\s*\)/g,function(_,id,cnt){res.counts[id]=cnt;hasCounts=true;return '';});
+    var cleaned=q.replace(/\(\s*\d+\s*\)/g,' ').trim();
+    if(hasCounts||/^[\d,\s]+$/.test(cleaned)){ res.mode='id'; res.terms=cleaned.split(/[,\s]+/).filter(Boolean); return res; }
+    if(q.indexOf(',')!==-1){ res.or=true; res.terms=q.split(',').map(function(s){return s.trim();}).filter(Boolean); }
+    else { res.terms=q.split(/\s+/).filter(Boolean); }
+    return res; }
   function hl(s){ var terms=parseQuery(state.q).terms; if(!terms.length) return esc(s);
     var out=esc(s);
     terms.forEach(function(t){ var q=t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -551,6 +566,7 @@
     var gtags=(r.groups||[]).filter(Boolean).map(function(g){return '<span class="gtag">'+esc(g)+'</span>';}).join('');
     var head='<div class="chead" data-i="'+i+'"><div class="ctop">'+
       (r.id?'<span class="eid">'+hl(r.id)+'</span>':'')+
+      (activeCounts[r.id]?'<span class="cnt-badge">📊 ваше кол-во: '+esc(activeCounts[r.id])+'</span>':'')+
       (sev?'<span class="sev" style="color:'+SEVC[sev]+';background:'+SEVC[sev].replace('var(','rgba(').replace(')',',0.12)')+';border:1px solid '+SEVC[sev]+'"><span class="sd" style="background:'+SEVC[sev]+'"></span>'+esc(r.sev)+'</span>':'')+
       '<span class="src '+r.src+'">'+r.src+'</span></div>'+
       (r.title?'<div class="ctitle">'+hl(r.title)+'</div>':'')+
@@ -589,27 +605,43 @@
 
   var grid=document.getElementById('grid'), meta=document.getElementById('meta');
   function render(){
-    var out=[],shown=0,qq=parseQuery(state.q);
-    records.forEach(function(r,i){
+    var qq=parseQuery(state.q); activeCounts=qq.counts||{};
+    var hasCounts=false; for(var _k in activeCounts){hasCounts=true;break;}
+    var matched=[];
+    records.forEach(function(r){
       if(state.src&&r.src!==state.src)return;
       if(state.sev.length&&state.sev.indexOf(sevKey(r.sev))===-1)return;
       if(state.cat&&(r.groups||[]).indexOf(state.cat)===-1)return;
       if(state.mitre&&r._mitre.indexOf(state.mitre)===-1)return;
       if(qq.terms.length){
-        var ok = state.idOnly
-          ? qq.terms.some(function(t){return r._idtok.indexOf(t)!==-1||(r.id||'').toLowerCase()===t;})
-          : (qq.or ? qq.terms.some(function(t){return r._blob.indexOf(t)!==-1;})
-                   : qq.terms.every(function(t){return r._blob.indexOf(t)!==-1;}));
+        var ok;
+        if(qq.mode==='id'){ ok=qq.terms.some(function(t){return r._idtok.indexOf(t)!==-1||(r.id||'').toLowerCase()===t;}); }
+        else { var hay=state.byName?(r.title||'').toLowerCase():r._blob;
+          ok=qq.or?qq.terms.some(function(t){return hay.indexOf(t)!==-1;}):qq.terms.every(function(t){return hay.indexOf(t)!==-1;}); }
         if(!ok) return;
       }
-      out.push(card(r,i)); shown++;
+      matched.push(r);
     });
+    if(hasCounts) matched.sort(function(a,b){return (parseInt(activeCounts[b.id]||'0',10)||0)-(parseInt(activeCounts[a.id]||'0',10)||0);});
+    var out=matched.map(function(r,idx){return card(r,idx);}), shown=matched.length;
     var srcLbl={Windows:'Windows',Sysmon:'Sysmon',Linux:'Linux',Attack:'Атака',Defense:'Защита',Error:'Error-коды',LogonType:'Logon Types',Storyline:'Цепочки атак'};
     var active=[]; if(state.src)active.push(srcLbl[state.src]||state.src); if(state.cat)active.push(state.cat);
     if(state.sev.length)active.push('важность: '+state.sev.map(function(s){return sevRu[s]||s;}).join('/'));  if(state.mitre)active.push(state.mitre); if(state.q)active.push('«'+state.q+'»');
     meta.innerHTML='Найдено: <b>'+shown+'</b> из '+records.length+(active.length?' &nbsp;·&nbsp; фильтры: '+active.map(esc).join(', '):'');
     grid.innerHTML=shown?out.join(''):
       '<div class="empty"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.5 4.5 0 019.5 14z"/></svg><div><b>Ничего не найдено.</b><br>Сбрось фильтры или измени запрос.</div></div>';
+    // «Не найдено»: Event ID из запроса, которых нет в справочнике (для ID-режима)
+    var nf=document.getElementById('notfound');
+    if(qq.mode==='id' && qq.terms.length){
+      var foundTerms={};
+      matched.forEach(function(r){ qq.terms.forEach(function(t){ if(r._idtok.indexOf(t)!==-1||(r.id||'').toLowerCase()===t) foundTerms[t]=1; }); });
+      var notFound=qq.terms.filter(function(t){return !foundTerms[t];});
+      if(notFound.length){
+        nf.innerHTML='<div class="nf-title">❌ Нет в справочнике ('+notFound.length+') — проанализируй отдельно:</div><div class="nf-list">'+
+          notFound.map(function(t){return '<span class="nf-item">'+esc(t)+(activeCounts[t]?' <span class="nf-cnt">('+esc(activeCounts[t])+')</span>':'')+'</span>';}).join('')+'</div>';
+        nf.style.display='';
+      } else nf.style.display='none';
+    } else nf.style.display='none';
     stateToHash();
   }
 
@@ -621,7 +653,7 @@
     if(state.sev.length) p.push('sev='+state.sev.join(','));
     if(state.cat) p.push('cat='+encodeURIComponent(state.cat));
     if(state.mitre) p.push('mitre='+encodeURIComponent(state.mitre));
-    if(state.idOnly) p.push('idonly=1');
+    if(state.byName) p.push('byname=1');
     if(state.expand) p.push('expand=1');
     var h=p.join('&');
     try{ history.replaceState(null,'', h?('#'+h):(location.pathname+location.search)); }catch(e){}
@@ -635,20 +667,20 @@
     if(p.sev) state.sev=p.sev.split(',').filter(Boolean);
     if(p.cat!==undefined) state.cat=p.cat;
     if(p.mitre!==undefined) state.mitre=p.mitre;
-    state.idOnly = p.idonly==='1';
+    state.byName = p.byname==='1';
     state.expand = p.expand==='1';
     return true;
   }
   function syncUIfromState(){
-    qinput.value=state.q; idOnly.checked=state.idOnly; expAll.checked=state.expand;
+    qinput.value=state.q; byName.checked=state.byName; expAll.checked=state.expand;
     [].forEach.call(srcEl.children,function(x){x.classList.toggle('active',x.dataset.val===state.src);});
     syncSevChips(); buildCats(); catSel.value=state.cat||''; msel.value=state.mitre||'';
   }
 
   // централизованная навигация (клик по Event ID / цепочке)
-  function goSearch(q, idOnlyFlag, src){
+  function goSearch(q, src){
     state.q=q; qinput.value=q;
-    state.idOnly=!!idOnlyFlag; if(idOnly) idOnly.checked=state.idOnly;
+    state.byName=false; if(byName) byName.checked=false;
     state.sev=[]; syncSevChips();
     state.mitre=''; msel.value='';
     if(src!==undefined) state.src=src;
@@ -660,11 +692,11 @@
 
   grid.addEventListener('click',function(e){
     var el=e.target.closest('.eidlink');
-    if(el){ e.stopPropagation(); goSearch(el.getAttribute('data-eid'), true, ''); return; }
+    if(el){ e.stopPropagation(); goSearch(el.getAttribute('data-eid'), ''); return; }
     var sc=e.target.closest('.slchip');
-    if(sc){ e.stopPropagation(); goSearch('storyline '+sc.getAttribute('data-num'), true, 'Storyline'); return; }
+    if(sc){ e.stopPropagation(); var s=slByNum[sc.getAttribute('data-num')]; if(s) goSearch(s.name, 'Storyline'); return; }
     var sb=e.target.closest('.slbtn');
-    if(sb){ e.stopPropagation(); goSearch(sb.getAttribute('data-eids').split(',').join(', '), true, ''); return; }
+    if(sb){ e.stopPropagation(); goSearch(sb.getAttribute('data-eids').split(',').join(', '), ''); return; }
     var cp=e.target.closest('.copy');
     if(cp){ e.stopPropagation(); var txt=cp.getAttribute('data-code');
       var ta=document.createElement('textarea'); ta.value=txt.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
