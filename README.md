@@ -15,7 +15,7 @@
 ![Platform](https://img.shields.io/badge/Windows-Linux-lightgrey)
 ![MITRE](https://img.shields.io/badge/MITRE-ATT%26CK-red)
 
-### 🔎 [**Открыть интерактивный поиск →**](https://5yn7hp0w3r.github.io/soc-events-cheatsheet/) &nbsp;·&nbsp; 🌐 [**LOL Links →**](https://5yn7hp0w3r.github.io/soc-events-cheatsheet/lol-links.html)
+### 🔎 [**Открыть интерактивный поиск →**](https://5yn7hp0w3r.github.io/soc-events-cheatsheet/) &nbsp;·&nbsp; 🌐 [**LOL Links →**](https://5yn7hp0w3r.github.io/soc-events-cheatsheet/lol-links.html) &nbsp;·&nbsp; 📖 [**Как пользоваться →**](https://5yn7hp0w3r.github.io/soc-events-cheatsheet/help.html)
 
 Поиск по Event ID, IoC, SPL-запросам · фильтры по категории, важности и MITRE ATT&CK · раздельно ⚔️ Атака / 🛡️ Защита · работает в браузере, без установки.
 

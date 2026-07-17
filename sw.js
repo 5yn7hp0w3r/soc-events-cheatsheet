@@ -1,6 +1,6 @@
 /* SOC Events Cheat Sheet — service worker (офлайн + автообновление) */
-const CACHE = 'soc-cheatsheet-v1';
-const ASSETS = ['./', 'index.html', 'lol-links.html', 'data.js', 'manifest.json', 'icon.svg'];
+const CACHE = 'soc-cheatsheet-v2';
+const ASSETS = ['./', 'index.html', 'lol-links.html', 'help.html', 'data.js', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(

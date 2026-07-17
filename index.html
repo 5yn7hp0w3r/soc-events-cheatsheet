@@ -192,6 +192,7 @@
 <nav class="topnav"><div class="wrap">
   <a href="index.html" class="here">🔎 Поиск событий</a>
   <a href="lol-links.html">🌐 LOL Links</a>
+  <a href="help.html">📖 Как пользоваться</a>
   <span class="sp"></span>
   <a href="https://github.com/5yn7hp0w3r/soc-events-cheatsheet" target="_blank" rel="noopener">GitHub ↗</a>
 </div></nav>
@@ -223,7 +224,7 @@
         <select id="mitreSel"><option value="">Все техники</option></select>
       </div>
       <div class="frow"><span class="flabel">Важность</span><div id="sevChips"></div>
-        <label class="expcb"><input type="checkbox" id="byName"> 🔤 по названию</label>
+        <label class="expcb"><input type="checkbox" id="byName"> по заголовку</label>
         <label class="expcb"><input type="checkbox" id="expAll"> развернуть все</label>
         <span class="reset" id="copylink">🔗 ссылка</span>
         <span class="reset" id="reset">✕ сбросить фильтры</span>
@@ -566,7 +567,7 @@
     var gtags=(r.groups||[]).filter(Boolean).map(function(g){return '<span class="gtag">'+esc(g)+'</span>';}).join('');
     var head='<div class="chead" data-i="'+i+'"><div class="ctop">'+
       (r.id?'<span class="eid">'+hl(r.id)+'</span>':'')+
-      (activeCounts[r.id]?'<span class="cnt-badge">📊 ваше кол-во: '+esc(activeCounts[r.id])+'</span>':'')+
+      (activeCounts[r.id]?'<span class="cnt-badge">📊 Количество событий: '+esc(activeCounts[r.id])+'</span>':'')+
       (sev?'<span class="sev" style="color:'+SEVC[sev]+';background:'+SEVC[sev].replace('var(','rgba(').replace(')',',0.12)')+';border:1px solid '+SEVC[sev]+'"><span class="sd" style="background:'+SEVC[sev]+'"></span>'+esc(r.sev)+'</span>':'')+
       '<span class="src '+r.src+'">'+r.src+'</span></div>'+
       (r.title?'<div class="ctitle">'+hl(r.title)+'</div>':'')+
